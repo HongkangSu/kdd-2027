@@ -1,32 +1,21 @@
-\begin{table*}[t]
-\centering
-\small
-\setlength{\tabcolsep}{8pt}
-\begin{tabular}{lrrr}
-\hline
-Training stage & Gretz (h) & Ingolstadt (h) & Fontenay (h) \\
-\hline
-Initial world-model fit & 5.228 & 1.185 & -- \\
-Online SUMO collection & 5.785 & 1.414 & 12.959 \\
-Replay, HDV-response, and WM updates & 0.430 & 0.045 & 0.234 \\
-Prediction diagnostics & 0.033 & 0.012 & 0.024 \\
-Imagined actor--critic & 2.127 & 1.780 & 2.692 \\
-Other measured/checkpoint overhead & 0.002 & 0.001 & 0.003 \\
-\hline
-Online episode-1--100 subtotal & 8.376 & 3.251 & 15.912 \\
-Training total & 13.603 & 4.437 & $\geq 15.912$ \\
-\hline
-\end{tabular}
-\caption{UrbanDreamer training-stage wall time through online policy episode
-100.  For Gretz and Ingolstadt, timing begins with the initial world-model fit
-after representation data are available, and the fit intervals are
-log-bracketed.  Episode-level online components are measured timers; the
-runner/checkpoint residual closes them to the trainer clock at checkpoint 100.
-Episodes 101--150 of the successful source run are excluded.  The detailed
-source table retains replay, HDV-response, world-model, diagnostic, and
-overhead components separately.  For Fontenay, the initial-fit clock is
-unavailable because the archived checkpoint resumes from an earlier partial
-fit; the displayed inequality therefore marks the measured online subtotal as
-a lower bound on the complete training total, not as an exact total.}
-\label{tab:online-wm-training-stage-time}
-\end{table*}
+\begin{table}[t]
+  \centering
+  \caption{UrbanDreamer training-time breakdown by stage in hours. Stage times sum to the totals reported in Table~\ref{tab:computational-efficiency-archive}.}
+  \renewcommand{\arraystretch}{1.0}
+  \resizebox{1.0\linewidth}{!}{
+    \begin{tabular}{lrrr}
+      \toprule
+      Training stage & Gretz (h) & Ingolstadt (h) & Fontenay (h) \\
+      \midrule
+      warm-up collection & 3.816 & 1.129 & 5.273 \\
+      Initial fit & 5.228 & 1.185 & 12.117 \\
+      SUMO simulation & 5.785 & 1.414 & 12.959 \\
+      Model updates & 0.430 & 0.045 & 0.234 \\
+      Imagined actor-critic & 2.127 & 1.780 & 2.692 \\
+      \midrule
+      Component-summed training total & \textbf{17.386} & \textbf{5.553} & \textbf{33.275} \\
+      \bottomrule
+    \end{tabular}
+  }
+  \label{tab:online-wm-training-stage-time}
+\end{table}

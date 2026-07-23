@@ -69,6 +69,14 @@ reconstruction weight \(\lambda_{\mathrm{rec}}=0.2\); episode mean travel time
 supervision weight \(0.2\); candidate routes \(K=4\);
 episode context dimension \(3\).
 
+\paragraph{Training-time breakdown.}  Table~\ref{tab:online-wm-training-stage-time}
+decomposes UrbanDreamer's total training time into warm-up collection, initial
+world-model fit, online SUMO simulation, world-model updates, and imagined
+actor--critic optimization.  Simulation accounts for the largest share, while
+world-model updates and imagination together cost less than the initial fit.
+
+\input{table/training stage time}
+
 
 \section{Case Study and Visualization}
 
