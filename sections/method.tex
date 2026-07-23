@@ -101,7 +101,7 @@ The decoder is trained jointly with the dynamics model by adding the  reconstruc
 \|\hat x^{\mathrm{dyn}}_{t,u}-x^{\mathrm{dyn}}_{t,u}\|^2.
 \end{array}
 \end{equation}
-In actor-critic learning, the decoder is also used to calculate route-level episode rewards and value targets.
+In actor-critic learning, the decoder is also used to calculate route-level episode rewards and value targets.  It additionally carries a supervised episode-level head \(\widehat T_{\mathrm{all}}(z)\) that predicts the completed-vehicle mean travel time from a latent state and provides the global reward readout used by the actor--critic learner.
 % 中文注释：只有当 control 所需的 traffic quantities 可以从 latent representation 中重构出来时，该 representation 才能支持 policy learning。令 \(x^{\mathrm{dyn}}_{t,u}\) 表示 segment \(u\) 的动态观测向量，包括 occupancy、normalized speed、vehicle count 和 halting count。UrbanDreamer 通过 shared affine map 和 SiLU activation，再接独立的 linear channel heads，从 \(Z_t\) 中解码这些量。volume channel 在作为物理非负 volume 使用前会经过 softplus 映射。decoded speed 和 volume 随后提供 imagined rewards 与 route-cost features 使用的 travel-time readouts。decoder 通过 observed traffic fields 上的 reconstruction loss \(\mathcal{L}_{\mathrm{dec}}\) 训练；在 online world-model training 中，同一个 decoder 也用于监督 flow-matching transition 之后预测出的 next-step latents。这个 autoencoding constraint 防止 latent traffic representation 丢弃后续 imagined rollouts 中计算 rewards、route-cost features 和 value targets 所需的 observable traffic variables。
 
 

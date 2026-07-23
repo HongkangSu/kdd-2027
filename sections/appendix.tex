@@ -23,19 +23,29 @@ identically before evaluating every compared method.
 \section{Architecture and Training Details}
 \label{app:architecture}
 
-\paragraph{World model.}  The GCN encoder stacks graph convolution layers over
-the row-normalized adjacency matrix (each row sums to one), and messages are
-passed along the directed edges of the segment-node graph.  The velocity
-predictor is a block-causal transformer: segment latents are packed into
-spatial tokens, attention mixes tokens within one decision epoch, and temporal
-context is attended causally over a sliding history window of up to \(k_{\max}=8\)
-past traffic representations.  The conditions
-\((\Psi_t^{\mathrm{CAV}},D_t,\hat H^{\mathrm{HDV}},C_t)\in\mathbb{R}^{3M+3}\)
-are encoded and injected as additional conditioning inputs.  At imagination
-time the ODE is integrated with one explicit Euler step.  The decoder count
-head applies a softplus map, and the travel-time readout
-\(\widehat\tau_t(u)=\ell(u)/\widehat v_{t,u}\) clips the decoded speed ratio to
-\([0.05,1.50]\) of the free-flow speed before inversion.  \(M=|N|\) denotes the
+\paragraph{Encoder and decoder.}  The encoder projects the \(d_x=8\) segment
+features to \(d_z=64\) and applies two graph convolution layers over the
+row-normalized adjacency matrix (each row sums to one), with messages passed
+along the directed edges of the segment-node graph.  The decoder shares a
+linear--SiLU block and splits into per-channel heads for the four dynamic
+channels; the vehicle-count head applies a softplus map, and the travel-time
+readout \(\widehat\tau_t(u)=\ell(u)/\widehat v_{t,u}\) clips the decoded speed
+ratio to \([0.05,1.50]\) of the free-flow speed before inversion.  The decoder
+also carries the episode-level head \(\widehat T_{\mathrm{all}}\): it pools
+the latent tokens over segments by mean, max, and count-weighted mean (with
+weights from the decoded count channel), maps the pooled vector through a
+two-layer MLP, and outputs a softplus scalar in minutes.  This head is
+supervised on the realized completed-vehicle mean travel time of each
+training episode with a relative-MSE loss of weight \(0.2\).
+
+\paragraph{Velocity predictor.}  The velocity predictor is a block-causal
+transformer with hidden size 256, 6 layers, and 4 attention heads: segment
+latents are packed into spatial tokens, attention mixes tokens within one
+decision epoch, and temporal context is attended causally over a sliding
+history window of up to \(k_{\max}=8\) past traffic representations.  The
+conditions \((\Psi_t^{\mathrm{CAV}},D_t,\hat H^{\mathrm{HDV}},C_t)\) are
+encoded and injected as additional conditioning inputs.  At imagination time
+the ODE is integrated with one explicit Euler step.  \(M=|N|\) denotes the
 number of segment nodes.
 
 \paragraph{HDV response predictor.}  The predictor is an MLP with input
@@ -48,7 +58,8 @@ the world-model optimizer.
 \paragraph{Main hyperparameters.}  Imagination horizon \(L_{\mathrm{im}}=8\);
 trace parameter \(\lambda=0.95\); per-vehicle reward scale \(\kappa_r=60\);
 global reward scale \(\kappa_g=1\); global advantage weight \(\alpha_g=1.0\);
-reconstruction weight \(\lambda_{\mathrm{rec}}=1.0\); candidate routes \(K=4\);
+reconstruction weight \(\lambda_{\mathrm{rec}}=0.2\); episode mean travel time
+supervision weight \(0.2\); candidate routes \(K=4\);
 episode context dimension \(3\).
 
 
