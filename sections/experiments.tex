@@ -11,7 +11,7 @@ We evaluate UrbanDreamer on three urban road networks from the RouteRL and URB b
 
 \subsubsection{Baselines}
 
-We compare UrbanDreamer with two heuristic methods and four MARL methods. Free-flow greedy selects the candidate route with the minimum sum of free-flow edge travel times, whereas live-current greedy selects the route with the minimum sum of current edge travel-time estimates. The learning-based baselines include IQL \cite{iql}, IPPO \cite{ippo}, MAPPO \cite{mappo}, and MAMBA \cite{mamba}. The first three represent independent value learning, decentralized policy optimization, and centralized training with decentralized execution, respectively, while MAMBA is a multi-agent model-based RL method.
+We compare UrbanDreamer with two heuristic methods and four MARL methods. Free-flow greedy selects the candidate route with the minimum sum of free-flow edge travel times, whereas live-current greedy selects the route with the minimum sum of current edge travel-time estimates. The learning-based baselines include IQL \cite{iql}, IPPO \cite{ippo}, MAPPO \cite{mappo}, and MAMBA \cite{mamba}. The first three represent independent value learning, decentralized policy optimization, and centralized training with decentralized execution, respectively. MAMBA is a multi-agent model-based RL method that learns a latent world model in the Dreamer style, and therefore serves as the direct world-model baseline in our comparison. All methods share the same route-candidate interface, departure demand, and disruption schedule, are trained under the same simulation protocol until convergence, and are evaluated on identical episodes; the environment-step counts reported below cover each method's complete training, including UrbanDreamer's warm-up data collection.
 
 \subsubsection{Evaluation Metrics}
 
@@ -28,7 +28,7 @@ We measure sample efficiency by the number of real SUMO environment steps requir
 
 \input{table/sample effiency}
 
-Figure~\ref{fig:sample-efficiency-training-proxy} shows the training curves, and Table~\ref{tab:sample-efficiency} reports the environment steps required to reach the best training performance. UrbanDreamer requires 2,040, 2,220, and 2,160 environment steps on Gretz-Armainvilliers, Ingolstadt, and Fontenay-en-Parisis, respectively. Compared with MAPPO, which requires the fewest steps among the baselines, UrbanDreamer reduces the required environment steps by 42.4\%, 32.7\%, and 41.9\%.
+Figure~\ref{fig:sample-efficiency-training-proxy} shows the training curves, and Table~\ref{tab:sample-efficiency} reports the environment steps required to reach the best training performance. UrbanDreamer requires 2,040, 2,220, and 2,160 environment steps on Gretz-Armainvilliers, Ingolstadt, and Fontenay-en-Parisis, respectively. Compared with MAPPO, which requires the fewest steps among the baselines, UrbanDreamer reduces the required environment steps by 42.4\%, 32.7\%, and 41.9\%. Relative to MAMBA, the Dreamer-style model-based baseline, the reductions are 76.7\%, 82.4\%, and 67.6\%.
 
 \begin{figure*}[t]
   \centering
