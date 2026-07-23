@@ -29,12 +29,6 @@ the departure demand, \(H_t^{\mathrm{HDV}}\) is the HDV traffic influence, and
 active CAV and HDV fractions.
 % 中文注释：基于这些 observations，UrbanDreamer 将 MDP transition 映射为一个 latent prediction problem：\(Z_t=f_\phi(X_t,G)\)，\(\Psi_t^{\mathrm{CAV}}=\Pi_G(\mathbf a_t,\mathcal{I}_t)\)，并由 \(F_\phi\) 在 \(\Psi_t^{\mathrm{CAV}}\)、\(D_t\)、\(H_t^{\mathrm{HDV}}\) 和 episode context \(c_t\) 的条件下预测 \(\hat Z_{t+1}\)。其中 \(\mathbf a_t\) 是 active CAVs 实际执行的 joint route action，\(c_t\) 包含归一化决策时间和 active CAV/HDV 比例。learned transition 不是新的 problem definition，而是 policy learning 中使用的 MDP transition surrogate。
 
-\begin{figure}
-    \centering
-    \includegraphics[width=0.75\linewidth]{figure/overview.png}
-    \caption{Overview}
-    \label{fig:overview}
-\end{figure}
 
 The rest of the method introduces the main modules of UrbanDreamer. The
 Flow Matching Dynamics Model learns the transition \(F_\phi\) over the latent space. The HDV Response Module estimates the uncontrollable human-driven
@@ -52,12 +46,6 @@ aggregates vehicle-level route decisions into graph-level planned
 pressure. And a flow-matching model predicts latent transitions.
 % 中文注释：本段是 3.2 的路线图段：先声明设计逻辑——想象训练的质量受限于 transition 的质量，然后按 encoder→conditioning→flow-matching transition→readouts 的顺序给出组件地图，并与 Overview 中的 \(F_\phi\) 记号衔接。写作功能是让读者在进入公式前掌握世界模型的整体结构。
 
-\begin{figure}
-    \centering
-    \includegraphics[width=0.75\linewidth]{figure/dynamics model.png}
-    \caption{Dynamics Model}
-    \label{fig:dynamics-model}
-\end{figure}
 
 \subsubsection{GNN Traffic Encoder}
 
@@ -240,12 +228,6 @@ rollouts therefore optimize against step-level counterfactual traffic
 responses, while day-to-day HDV demand shifts are learned from real simulator
 episodes rather than simulated inside imagination.
 
-\begin{figure}
-    \centering
-    \includegraphics[width=0.75\linewidth]{figure/HDV response preditor.png}
-    \caption{HDV response predictor}
-    \label{fig:hdv-response}
-\end{figure}
 
 \subsubsection{Response Target}
 

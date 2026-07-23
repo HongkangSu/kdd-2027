@@ -1,15 +1,16 @@
 \begin{table}[t]
   \centering
-  \caption{Training time in hours required to reach convergence on the three urban networks. All runs use a single NVIDIA RTX 3090 GPU. Lower values indicate better performance.}
+  \caption{Training time in hours on the three urban networks. All runs use a single NVIDIA RTX 3090 GPU. Lower values indicate better performance.}
   \renewcommand{\arraystretch}{1.0}
   \resizebox{1.0\linewidth}{!}{
     \begin{tabular}{lccc}
       \toprule
       Method & Gretz-Armainvilliers & Ingolstadt & Fontenay-en-Parisis \\
       \midrule
-      IQL & 33.5 & 19.3 & 110.0 \\
-      IPPO & 38.0 & 12.6 & 96.2 \\
-      MAPPO & 38.6 & 28.4 & 134.5 \\
+      IQL & 28.8 & 15.3 & 78.2 \\
+      IPPO & 33.0 & 10.4 & 96.1 \\
+      MAPPO & 35.1 & 13.9 & 85.6 \\
+      MAMBA & 37.0 & 10.2 & 78.9 \\
       \textbf{UrbanDreamer} & \textbf{17.4} & \textbf{5.6} & \textbf{33.3} \\
       \bottomrule
     \end{tabular}
