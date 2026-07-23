@@ -55,6 +55,13 @@ output over the \(M\) segment nodes.  It is trained with its own AdamW optimizer
 (learning rate \(2\times10^{-3}\)) on adjacent episode pairs, separately from
 the world-model optimizer.
 
+\paragraph{Vehicle wrapper.}  The wrapper advances each vehicle along its
+selected route by consuming the decoded segment travel times under a per-step
+time budget.  It does not enforce explicit vehicle conservation or queue
+spillback against the decoded segment count field; both the wrapper and the
+transition consume the same decoded readout, so vehicle positions and segment
+speeds evolve from a single prediction rather than two independent models.
+
 \paragraph{Main hyperparameters.}  Imagination horizon \(L_{\mathrm{im}}=8\);
 trace parameter \(\lambda=0.95\); per-vehicle reward scale \(\kappa_r=60\);
 global reward scale \(\kappa_g=1\); global advantage weight \(\alpha_g=1.0\);
