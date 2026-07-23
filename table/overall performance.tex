@@ -1,0 +1,24 @@
+\begin{table*}[t]
+  \centering
+  \caption{Overall performance across three road networks. Lower values indicate better performance.}
+  \renewcommand{\arraystretch}{1.0}
+  \resizebox{1.0\linewidth}{!}{
+    \begin{tabular}{lccccccccc}
+      \toprule
+      \multirow{2}{*}{Method} & \multicolumn{3}{c}{Gretz-Armainvilliers} & \multicolumn{3}{c}{Ingolstadt} & \multicolumn{3}{c}{Fontenay-en-Parisis} \\
+      \cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+      & $T_{\mathrm{all}}\!\downarrow$ & $T_{\mathrm{CAV}}\!\downarrow$ & $T_{\mathrm{HDV}}\!\downarrow$ & $T_{\mathrm{all}}\!\downarrow$ & $T_{\mathrm{CAV}}\!\downarrow$ & $T_{\mathrm{HDV}}\!\downarrow$ & $T_{\mathrm{all}}\!\downarrow$ & $T_{\mathrm{CAV}}\!\downarrow$ & $T_{\mathrm{HDV}}\!\downarrow$ \\
+      \midrule
+      Free-flow greedy & 3.262 & 3.537 & 3.079 & 4.542 & 4.590 & 4.509 & 4.682 & 4.676 & 4.687 \\
+      Live-current greedy & 3.331 & 3.710 & 3.079 & 4.410 & 4.375 & 4.433 & 4.691 & 4.693 & 4.690 \\
+      IQL & 3.321 & 3.687 & 3.078 & 4.595 & 4.785 & 4.468 & 4.968 & 5.552 & 4.577 \\
+      IPPO & 3.933 & 5.169 & 3.111 & 5.679 & 7.532 & 4.443 & 5.438 & 6.611 & 4.657 \\
+      MAPPO & 3.246 & 3.538 & 3.050 & 4.664 & 4.867 & 4.528 & 4.838 & 5.245 & 4.566 \\
+      MAMBA & 3.353 & 3.725 & 3.106 & 4.555 & 4.519 & 4.578 & 5.068 & 5.821 & 4.566 \\
+      \midrule
+      \textbf{UrbanDreamer} & \textbf{3.167} & \textbf{3.297} & \textbf{3.081} & \textbf{4.421} & \textbf{4.370} & \textbf{4.454} & \textbf{4.600} & \textbf{4.665} & \textbf{4.556} \\
+      \bottomrule
+    \end{tabular}
+  }
+  \label{tab:overall-performance}
+\end{table*}

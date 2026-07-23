@@ -1,0 +1,56 @@
+\section{Related Works}
+
+\subsection{Dynamic Routing in Mixed-Autonomy Networks}
+
+Dynamic route choice is coupled through congestion, which has been formulated
+as Markov routing games \cite{calderone2017markov} and mean-field
+approximations \cite{tanaka2020linearly,cabannes2022solving}.  Mixed-autonomy
+networks add the asymmetry that only a subset of road users can be
+coordinated, so rerouting controllable vehicles changes the congestion costs
+of both populations \cite{lazar2017capacity,lazar2020routing}, jointly with
+pricing \cite{mansourianfar2021joint} or as a Stackelberg problem
+\cite{kolarich2022stackelberg}.  Travelers also adapt across episodes on a
+slower day-to-day time scale \cite{liang2023day,yi2026routing,hou2025traffic}.
+These models provide interpretable equilibrium analyses but require explicit
+link-cost functions, prescribed responses, or repeated equilibrium
+computation.  UrbanDreamer adopts the same problem view while learning
+traffic transitions and HDV responses from simulator experience.
+% 中文注释：动态选路通过拥堵相互耦合，已有工作将其建模为 Markov 路由博弈和均值场近似。混合自治网络只有部分用户可协调，对可控车辆改道会同时改变两类群体的拥堵成本，相关形式包括联合定价和 Stackelberg 问题；出行者还会在 episode 之间以 day-to-day 尺度适应。这些模型需要显式成本函数或重复均衡计算，UrbanDreamer 则从仿真经验中学习转移和 HDV 响应。
+
+\subsection{Reinforcement Learning for Routing Games}
+
+Reinforcement learning avoids a differentiable traffic model or per-decision
+equilibrium solves, and has been applied to autonomous-vehicle routing
+\cite{lazar2021learning}, Markov routing games \cite{shou2022multi}, and
+mixed-autonomy traffic flow \cite{vinitsky2023optimizing}.  Recent
+environments provide vehicle-executable route-choice interfaces evaluated in
+microscopic simulation
+\cite{thomasini2023routechoiceenv,akman2025routerl,akman2026urb,psarou2026optimizing},
+and socially aware objectives address the externalities of selfish routing
+\cite{psarou2025autonomous,psarou2026position}.  However, these methods train
+primarily on simulator rollouts, which are costly while network-wide
+consequences emerge only after many decision intervals.  UrbanDreamer retains
+the RL formulation and simulator-grounded evaluation, but learns a world model
+so that additional updates are performed in imagination.
+% 中文注释：强化学习不需要可微交通模型或逐决策均衡求解，已被用于自动驾驶选路、Markov 路由博弈和混合自治交通流；近期环境提供了可在微观仿真中评估的车辆级选路接口，社会感知目标处理自私选路的外部性。但这些方法主要依赖昂贵的仿真 rollout 训练，UrbanDreamer 则通过学习 world model 在想象中执行额外更新。
+
+\subsection{World Models}
+
+World models learn latent environment dynamics to reuse experience and reduce
+real interactions, from early recurrent models and PlaNet
+\cite{ha2018recurrent,hafner2019learning} to the Dreamer family, which trains
+actors and critics inside imagined latent trajectories
+\cite{hafnerdream,hafnermastering,hafner2025mastering,dreamer4,zhan2026bootstrap}.
+Because imagined learning is only as good as the model in the regions the
+policy visits, model-based policy optimization studies trust region and
+compounding error \cite{janner2019trust,rajeswaran2020game}, motivating
+grounding in new experience and simulator validation.  World models have also
+been extended to multi-agent and social response modeling
+\cite{mamba,chai2024aligning,liu2024efficient,zhao2026learning,zhang2026social},
+and to autonomous driving \cite{li2024think2drive,yang2026raw2drive}, where
+they primarily address ego-centric control.  Mixed-autonomy routing instead
+couples vehicle-specific route choices with network-level dynamics and
+uncontrollable HDVs; UrbanDreamer bridges this interface by projecting route
+decisions onto the road graph and training a vehicle-executable actor through
+graph-level traffic imagination.
+% 中文注释：world model 通过学习 latent dynamics 复用经验、减少真实交互，从早期循环模型和 PlaNet 到 Dreamer 系列。想象学习的质量受限于模型在策略访问区域的精度，因此需要在原始环境中持续校准和验证。world model 也被扩展到多智能体与社会响应建模以及自动驾驶，但后者主要处理自车中心控制；UrbanDreamer 通过把选路决策投影到路网图上，用图级交通想象训练可执行的选路 actor。

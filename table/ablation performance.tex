@@ -1,0 +1,23 @@
+\begin{table*}[t]
+  \centering
+  \caption{Component-ablation results across three cities.}
+  \renewcommand{\arraystretch}{1.0}
+  \resizebox{1.0\linewidth}{!}{
+    \begin{tabular}{lccccccccc}
+      \toprule
+      \multirow{2}{*}{Method} & \multicolumn{3}{c}{Gretz-Armainvilliers} & \multicolumn{3}{c}{Ingolstadt} & \multicolumn{3}{c}{Fontenay-en-Parisis} \\
+      \cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+      & $T_{\mathrm{all}}$ & $T_{\mathrm{CAV}}$ & $T_{\mathrm{HDV}}$ & $T_{\mathrm{all}}$ & $T_{\mathrm{CAV}}$ & $T_{\mathrm{HDV}}$ & $T_{\mathrm{all}}$ & $T_{\mathrm{CAV}}$ & $T_{\mathrm{HDV}}$ \\
+      \midrule
+      Actor-Critic & 3.219 & 3.514 & 3.022 & 4.572 & 4.764 & 4.443 & 4.771 & 5.114 & 4.543 \\
+      w/o HDV Response & 3.284 & 3.624 & 3.058 & 4.507 & 4.522 & 4.497 & 4.704 & 4.919 & 4.561 \\
+      Vehicle Critic Only & 3.272 & 3.580 & 3.067 & 4.450 & 4.378 & 4.497 & 4.673 & 4.864 & 4.546 \\
+      Global Critic Only & 5.198 & 8.347 & 3.104 & 7.812 & 12.805 & 4.483 & 6.481 & 9.111 & 4.728 \\
+      MSE Transition & 3.240 & 3.479 & 3.081 & 4.516 & 4.518 & 4.514 & 4.682 & 4.862 & 4.563 \\
+      \midrule
+      \textbf{UrbanDreamer} & \textbf{3.167} & \textbf{3.297} & \textbf{3.081} & \textbf{4.421} & \textbf{4.370} & \textbf{4.454} & \textbf{4.600} & \textbf{4.665} & \textbf{4.556} \\
+      \bottomrule
+    \end{tabular}
+  }
+  \label{tab:ablation performance}
+\end{table*}

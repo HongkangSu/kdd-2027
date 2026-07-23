@@ -1,0 +1,108 @@
+\section{Experiments}
+
+We evaluate UrbanDreamer in the SUMO traffic simulator on three urban road networks. The experiments consist of three parts: overall performance, efficiency and scalability, and the ablation study.
+
+\subsection{Experimental Settings}
+
+\subsubsection{Datasets and Road Networks}
+
+We evaluate UrbanDreamer on three urban road networks from the RouteRL and URB benchmarks \cite{akman2025routerl,akman2026urb}: Gretz-Armainvilliers (4,485 road segments and 636 agents), Ingolstadt (853 road segments and 1,035 agents), and Fontenay-en-Parisis (7,585 road segments and 2,068 agents). We set the CAV penetration rate to 40\%. To create congested bottlenecks, we impose temporary speed reductions on selected SUMO edges in each original network. The reductions follow a fixed time schedule within every episode, are identical across episodes, and are shared by all compared methods, so they act as a stationary property of each benchmark rather than an exogenous stochastic event.
+
+
+\subsubsection{Baselines}
+
+We compare UrbanDreamer with two heuristic methods and four MARL methods. Free-flow greedy selects the candidate route with the minimum sum of free-flow edge travel times, whereas live-current greedy selects the route with the minimum sum of current edge travel-time estimates. The learning-based baselines include IQL \cite{iql}, IPPO \cite{ippo}, MAPPO \cite{mappo}, and MAMBA \cite{mamba}. The first three represent independent value learning, decentralized policy optimization, and centralized training with decentralized execution, respectively, while MAMBA is a multi-agent model-based RL method.
+
+\subsubsection{Evaluation Metrics}
+
+All methods are evaluated using the same route candidates, traffic demand, disruption settings, simulation horizon, and initial HDV state. We use the global mean travel time \(T_{\mathrm{all}}\) as the primary metric and additionally report the mean travel times of CAVs and HDVs, denoted by \(T_{\mathrm{CAV}}\) and \(T_{\mathrm{HDV}}\), respectively.
+
+
+\subsection{Overall Performance}
+
+Table~\ref{tab:overall-performance} reports the mean travel times of all vehicles, CAVs, and HDVs on the three urban networks. All travel times are measured in minutes, and lower values indicate better performance.
+
+\input{table/overall performance}
+
+UrbanDreamer achieves the best overall performance on Gretz-Armainvilliers and Fontenay-en-Parisis and remains competitive with live-current greedy on Ingolstadt. It consistently outperforms all learning-based baselines across the three networks, establishing state-of-the-art performance among learning-based methods. The improvements are primarily reflected in lower CAV travel times, while \(T_{\mathrm{HDV}}\) remains competitive, indicating that the overall gains are not achieved at the expense of HDVs.
+
+% 中文注释：UrbanDreamer 在 Gretz-Armainvilliers 上的三个完成率有效通行时间指标中均取得最佳结果。它的 \(t_{\mathrm{all}}\) 分别比 free-flow greedy 和 live-current greedy 低 0.7076 分钟和 0.5761 分钟，对应 14.68\% 和 12.28\% 的下降。MAPPO 在该网络上的完成率只有 89.62\%，因此不参与通行时间排名。
+
+
+\subsection{Efficiency and Scalability}
+
+We evaluate UrbanDreamer in terms of sample efficiency, computational efficiency, and scalability. Specifically, we measure the number of environment steps required during training, the total training time, and how the computational cost changes with the road network scales.
+
+\subsubsection{Sample Efficiency}
+
+We measure sample efficiency by the number of real SUMO environment steps required for each method to reach converged performance, defined as its best 20-episode moving-average \(T_{\mathrm{all}}\) during training. For UrbanDreamer, this count includes the SUMO environment steps used for warm-up data collection.
+
+\input{table/sample effiency}
+
+Figure~\ref{fig:sample-efficiency-training-proxy} shows the training curves, and Table~\ref{tab:sample-efficiency} reports the environment steps required to reach the best training performance. UrbanDreamer requires 2,040, 2,220, and 2,160 environment steps on Gretz-Armainvilliers, Ingolstadt, and Fontenay-en-Parisis, respectively. Compared with MAPPO, which requires the fewest steps among the baselines, UrbanDreamer reduces the required environment steps by 42.4\%, 32.7\%, and 41.9\%.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figure/sample_efficiency.pdf}
+  \caption{Sample Efficiency}
+  \label{fig:sample-efficiency-training-proxy}
+\end{figure*}
+
+
+
+\subsubsection{Computational Efficiency}
+
+\input{table/computation efficiency}
+
+Table~\ref{tab:computational-efficiency-archive} reports the total training time of each learning method. UrbanDreamer completes training in 17.4, 5.6, and 33.3 hours on Gretz-Armainvilliers, Ingolstadt, and Fontenay-en-Parisis, respectively, reducing training time by 48.1\%, 55.6\%, and 65.4\% relative to the fastest baseline on each network.
+
+
+\subsubsection{Scalability with Traffic-System Size}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.8\linewidth]{figure/scalability_training_time}
+  \caption{Total Training Time across different road networks}
+  \label{fig:scalability_training_time}
+\end{figure}
+
+Figure~\ref{fig:scalability_training_time} compares training time across road networks with increasing numbers of road segments. Training time increases for all methods as the network grows, while UrbanDreamer remains consistently faster than the baselines. Its training time increases from 5.566 hours on Ingolstadt (853 road segments) to 17.419 hours on Gretz-Armainvilliers (4,485 road segments) and 33.302 hours on Fontenay-en-Parisis (7,585 road segments), whereas the baselines require 96.2--134.5 hours on the largest network. Thus, UrbanDreamer's absolute training-time advantage becomes more pronounced as the road-network size increases.
+
+\subsection{Ablation}
+
+We evaluate the contributions of world model imagination, HDV response prediction, the vehicle and global critics, and the flow-matching transition model through controlled ablations. 
+
+We conduct three groups of ablation experiments. Component ablation evaluates the effects of the main components on routing performance, efficiency ablation examines the contribution of world-model imagination to sample efficiency, and transition ablation compares the predictive quality of different transition models.
+
+
+\subsubsection{Component Ablation}
+
+We compare UrbanDreamer with five variants to assess the contribution of each component to routing performance. Actor-Critic removes world-model imagination, w/o HDV Response removes HDV influence prediction, Vehicle Critic Only and Global Critic Only retain a single critic, and MSE Transition replaces flow matching with deterministic next-state regression.
+
+
+
+\input{table/ablation performance}
+
+Table~\ref{tab:ablation performance} shows that UrbanDreamer achieves the lowest \(T_{\mathrm{all}}\) and \(T_{\mathrm{CAV}}\) on all three networks. Every ablated variant increases \(T_{\mathrm{all}}\), with Global Critic Only causing the largest degradation, highlighting the importance of vehicle-level learning signals. Replacing flow matching with MSE regression also yields higher \(T_{\mathrm{all}}\) on all three networks.
+
+\subsubsection{Efficiency Ablation}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.3\linewidth]{figure/ingolstadt_effiency_ablation.pdf}
+  \includegraphics[width=0.3\linewidth]{figure/gretz_effiency_ablation.pdf}
+  \includegraphics[width=0.3\linewidth]{figure/fontenay_effiency_ablation.pdf}
+  \caption{Sample-efficiency ablation on three urban road networks. The training curves compare UrbanDreamer with Actor-Critic (No World Model) over real SUMO environment steps. Higher \(-T_{\mathrm{all}}\) indicates better routing performance.}
+  \label{fig:efficiency_ablation}
+\end{figure*}
+
+We compare UrbanDreamer with Actor-Critic (No World Model) to isolate the effect of world-model imagination. Figure~\ref{fig:efficiency_ablation} shows that UrbanDreamer improves substantially faster and reaches stable performance with fewer environment steps on all three networks, demonstrating that world model imagination improves sample efficiency.
+
+\subsubsection{Transition Ablation}
+
+We compare the flow-matching transition model with its MSE-based counterpart on held-out 8-step rollouts. Prediction quality is measured by the MAE of normalized speed and capacity-normalized vehicle count.
+
+\input{table/ablation prediction}
+
+
+Table~\ref{tab:wm-prediction-ablation} shows that flow matching achieves lower speed and vehicle-count MAE on all three networks, demonstrating more accurate multi-step transition prediction.

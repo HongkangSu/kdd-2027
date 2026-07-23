@@ -1,0 +1,18 @@
+\begin{table}[t]
+  \centering
+  \caption{Total training time (hours) across three cities. All experiments were run on a single NVIDIA RTX 3090 GPU.}
+  \renewcommand{\arraystretch}{1.0}
+  \resizebox{1.0\linewidth}{!}{
+    \begin{tabular}{lccc}
+      \toprule
+      Method & Gretz-Armainvilliers & Ingolstadt & Fontenay-en-Parisis \\
+      \midrule
+      IQL & 33.5 & 19.3 & 110.0 \\
+      IPPO & 38.0 & 12.6 & 96.2 \\
+      MAPPO & 38.6 & 28.4 & 134.5 \\
+      \textbf{UrbanDreamer} & \textbf{17.4} & \textbf{5.6} & \textbf{33.3} \\
+      \bottomrule
+    \end{tabular}
+  }
+  \label{tab:computational-efficiency-archive}
+\end{table}

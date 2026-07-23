@@ -1,0 +1,98 @@
+\section{Introduction}
+
+Dynamic routing is a coupled sequential decision problem rather than a
+collection of independent shortest-path queries.  At each decision interval,
+every active connected and autonomous vehicle (CAV) chooses one valid route
+from a masked set of up to \(K\) candidates connecting its current road segment
+to its destination.  When several CAVs favor the same route, their decisions
+reshape congestion and the
+travel conditions faced by later vehicles.  Mixed-autonomy traffic makes this
+coupling asymmetric: the controller can coordinate CAVs, but human-driven
+vehicles (HDVs) remain self-interested and cannot be rerouted directly.  The
+goal is therefore to coordinate the controllable vehicles so as to reduce the
+global mean travel time of both populations in a dynamic routing game
+\cite{calderone2017markov,lazar2020routing}.
+
+Analytical approaches characterize such congestion-coupled routing through
+traffic assignment, equilibrium, mean-field, or leader--follower models
+\cite{tanaka2020linearly,cabannes2022solving,kolarich2022stackelberg}.
+These formulations provide interpretable descriptions of traffic externalities
+and human response.  Their application to dynamic mixed-autonomy control,
+however, commonly requires prescribed link-cost functions, behavioral
+assumptions, or repeated equilibrium computation.  These requirements become
+restrictive when time-varying departures, incidents, and microscopic vehicle
+interactions jointly determine the traffic transition.
+
+Model-free multi-agent reinforcement learning (MARL) offers a complementary
+route: a microscopic simulator supplies the transition dynamics, and CAVs
+learn state-dependent route policies from experience.  Prior work formulates
+dynamic routing as a Markov game and provides executable route-choice
+environments for urban networks
+\cite{lazar2021learning,shou2022multi,akman2025routerl,akman2026urb}.
+This flexibility replaces an explicit analytical model with simulator-generated
+training transitions.  It does not, however, remove the cost of repeatedly
+querying the traffic environment.  Moreover, a route decision may affect a
+shared bottleneck only after several decision intervals, which makes real
+interaction difficult to reuse for long-horizon, multi-vehicle credit
+assignment.
+
+World-model reinforcement learning suggests a way to reuse these interactions:
+learn predictive latent dynamics from collected trajectories, then perform
+additional policy updates in imagined rollouts
+\cite{hafnerdream,hafnermastering,hafner2025mastering}.  Applying this idea to
+mixed-autonomy routing raises three coupled challenges.  First, traffic evolves
+as a graph-structured spatiotemporal field, while a route index has meaning only
+within one vehicle's current candidate set; many local route choices must
+therefore be converted into a graph-level transition condition.  Second, HDVs
+form an uncontrolled background population whose aggregate route demand can
+vary across episodes and must be estimated from preceding CAV pressure and HDV
+demand.  Third, actions are taken by individual vehicles, whereas the objective
+is network-wide, so policy learning must preserve vehicle-specific credit
+without ignoring global congestion effects.  Driving and multi-agent world
+models demonstrate the value of latent imagination
+\cite{mamba,li2024think2drive,yang2026raw2drive}.  In the
+mixed-autonomy routing formulation studied here, however, jointly handling
+these interfaces remains an open problem.
+
+We propose UrbanDreamer, a world-model-based MARL framework designed around
+these interfaces.  A parameter-shared actor retains the executable control
+semantics: each active CAV selects a current-to-destination candidate route.
+UrbanDreamer projects the sampled route choices onto a planned CAV pressure
+field defined on road-segment nodes, placing vehicle actions and network
+dynamics in the same graph coordinate system.  A graph convolutional encoder
+represents the traffic field, and a state-to-state flow-matching model predicts
+its next latent representation conditioned on CAV pressure, departures,
+episode context, and a history-conditioned estimate of HDV route demand.
+During imagined rollouts, a deterministic vehicle wrapper maintains identities,
+route progress, departures, and arrivals, while centralized per-vehicle and
+global critics
+provide individual and network-level value signals.  Simulator collection
+episodes refresh the world model, while held-out simulator episodes remain the
+basis for policy evaluation.
+
+The technical contributions are threefold:
+\begin{itemize}
+  \item We introduce a graph-aligned action interface and traffic world model
+  that connect executable per-CAV route choices to segment-level latent
+  transitions.  The model combines graph convolutional traffic encoding with
+  conditioned state-to-state flow matching for spatiotemporal prediction.
+  \item We introduce a history-conditioned, slow-timescale model of aggregate
+  HDV response rather than treating HDVs as fixed noise or an additional
+  controllable action.  An episode-level predictor estimates aggregate HDV
+  route demand from preceding CAV pressure and HDV demand, and conditions
+  subsequent imagined traffic transitions on that estimate.
+  \item We develop identity-preserving imagined route learning with a
+  parameter-shared CAV actor, a centralized per-vehicle critic, and an auxiliary
+  global critic.  A two-stage, simulator-grounded training pipeline alternates
+  online traffic collection, world-model adaptation, and imagined actor--critic
+  optimization.
+\end{itemize}
+
+The experimental protocol spans three urban road networks instantiated through
+the RouteRL and Urban Routing Benchmark (URB) framework, containing 636, 1,035,
+and 2,068 scheduled vehicles.  It compares UrbanDreamer against greedy routing
+and model-free MARL baselines along six planned evaluation axes: global
+route-control quality, population-specific outcomes, real simulator interaction,
+computational cost, component effects, and predictive diagnostics.  A synthetic
+cross-bottleneck network is reserved for controlled behavioral analysis rather
+than used as the headline task.

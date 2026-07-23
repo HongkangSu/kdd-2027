@@ -1,0 +1,348 @@
+\section{Method}
+\subsection{Overview}
+
+To address the sample efficiency problem in the mixed-autonomy routing problem, we propose UrbanDreamer, a model-based reinforcement learning method. Instead of improving a CAV routing policy only through repeated real-world interactions, UrbanDreamer learns a latent world model of
+traffic dynamics transitions and then trains the CAV actor through imagined
+rollouts.
+% 中文注释：UrbanDreamer 是一种用于 mixed-autonomy route control 的 model-based reinforcement learning 方法。它不是只通过反复 microscopic simulation 来改进 CAV routing policy，而是先学习一个紧凑的 segment-node traffic evolution world model，然后通过 imagined rollouts 训练 CAV actor。Simulator interaction 仍然用于 data collection 和 policy selection，但大多数 policy updates 在学习到的 latent traffic space 中完成。
+
+For modeling this problem,  we extract road segment traffic field \(X_t\) and vehicle observation
+\(\{o_{i,t}\}_{i\in\mathcal{I}_t}\) from the global state \(s_t\). The method is organized around two representations. Here, the road segment traffic field \(X_t\) is used for transition learning, while the vehicle observation
+\(\{o_{i,t}\}\) is used by the CAV actor.
+% 中文注释：该方法围绕两种表示组织。第一种是 segment-node traffic field，其中 \(G=(N,E)\) 的每个 node 表示一条 road segment，并携带 speed 和 occupancy 等动态交通量。第二种是 vehicle-level route decision，其中每个 active CAV 从当前 segment 到 destination 的 candidate routes 中选择一条。UrbanDreamer 通过 planned CAV pressure 连接这两种表示：实际采样的 one-hot route decisions 被投影到 road-segment graph 上，而这个 graph field 作为 world model 的条件。
+With these observations, UrbanDreamer maps the MDP transition into a latent
+prediction problem:
+\begin{equation}
+  \begin{array}{rcl}
+  Z_t &=& f_\phi(X_t,G),\\
+  \Psi_t^{\mathrm{CAV}} &=& \Pi_G(\mathbf a_t,\mathcal{I}_t),\\
+  \hat Z_{t+1}
+  &=&
+  F_\phi(
+  Z_t; \Psi_t^{\mathrm{CAV}},D_t,H_t^{\mathrm{HDV}},C_t
+  ),
+  \end{array}
+\end{equation}
+where \(\mathbf a_t\) is the joint route action of the active CAVs, \(D_t\) is
+the departure demand, \(H_t^{\mathrm{HDV}}\) is the HDV traffic influence, and
+\(C_t\) is an episode context containing the normalized decision time and the
+active CAV and HDV fractions.
+% 中文注释：基于这些 observations，UrbanDreamer 将 MDP transition 映射为一个 latent prediction problem：\(Z_t=f_\phi(X_t,G)\)，\(\Psi_t^{\mathrm{CAV}}=\Pi_G(\mathbf a_t,\mathcal{I}_t)\)，并由 \(F_\phi\) 在 \(\Psi_t^{\mathrm{CAV}}\)、\(D_t\)、\(H_t^{\mathrm{HDV}}\) 和 episode context \(C_t\) 的条件下预测 \(\hat Z_{t+1}\)。其中 \(\mathbf a_t\) 是 active CAVs 实际执行的 joint route action，\(C_t\) 包含归一化决策时间和 active CAV/HDV 比例。learned transition 不是新的 problem definition，而是 policy learning 中使用的 MDP transition surrogate。
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\linewidth]{figure/overview.png}
+    \caption{Overview}
+    \label{fig:overview}
+\end{figure}
+
+The rest of the method introduces the main modules of UrbanDreamer. The
+Flow Matching Dynamics Model learns the transition \(F_\phi\) over the latent space. The HDV Response Module estimates the uncontrollable human-driven
+traffic influence \(H_t^{\mathrm{HDV}}\).  The Actor-Critic Learner
+optimizes the CAV route actor \(\pi_\theta\) using imagined rollouts and long-horizon value signals. Finally, we will explain the Training Pipeline of this system.
+% 中文注释：method 的其余部分直接来自这一映射。flow-matching-based segment world model 在 segment-node latents 上学习 \(p_\phi\)。HDV response module 估计不可控的 human-driven traffic context \(H_t^{\mathrm{HDV}}\)。two-level actor-critic learner 使用 imagined rollouts 和 centralized value signals 优化 CAV route actor \(\pi_\theta\)。最后，simulator evaluation 选择 actor checkpoints，因此 policy improvement 仍然绑定在真实 MDP 上，而不是只绑定在 imagined returns 上。
+
+\subsection{Flow Matching Dynamics Model}
+
+UrbanDreamer builds the dynamics transition with four components: A GNN encoder compresses the segment traffic
+field \(X_t\) into a latent representation \(Z_t\). A decoder grounds the
+latent representation in traffic attributes, which later supply
+rewards and value targets for imagined rollouts. An action encoder
+aggregates vehicle-level route decisions into graph-level planned
+pressure. And a flow-matching model predicts latent transitions.
+% 中文注释：本段是 3.2 的路线图段：先声明设计逻辑——想象训练的质量受限于 transition 的质量，然后按 encoder→conditioning→flow-matching transition→readouts 的顺序给出组件地图，并与 Overview 中的 \(F_\phi\) 记号衔接。写作功能是让读者在进入公式前掌握世界模型的整体结构。
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\linewidth]{figure/dynamics model.png}
+    \caption{Dynamics Model}
+    \label{fig:dynamics-model}
+\end{figure}
+
+\subsubsection{GNN Traffic Encoder}
+
+Given the traffic field \(X_t\) and the adjacency matrix \(A\) of the road
+graph, a stack of GNN message-passing layers
+\begin{equation}
+\begin{array}{rcl}
+H^0 &=& X_tW_x,\\
+H^{\ell+1} &=&
+\mathrm{LN}\!\left(
+H^\ell+\sigma(AH^\ell W_m+H^\ell W_s)
+\right)
+\end{array}
+\end{equation}
+produces the latent traffic representation \(Z_t=H^L\), where \(W_x,W_m,W_s\) are learned projections, \(\sigma\) is a
+nonlinear activation function, and \(\mathrm{LN}\) denotes layer normalization.
+Each row \(z_{t,u}=Z_t(u)\) summarizes road segment \(u\) together with its
+graph neighborhood. 
+% 中文注释：本段先给出设计目的（拥堵传播天然发生在路网图上，所以编码器要在 segment-node graph 上做消息传递），再给出 GNN 编码公式。\(z_{t,u}\) 概括了 segment \(u\) 及其邻域。写作功能：先讲 why 再讲 what，避免读者把编码器当成任意的实现选择。
+
+\subsubsection{Reconstruction Decoder}
+
+Let \(x^{\mathrm{dyn}}_{t,u}\) denote the dynamically observed vector of segment
+\(u\), containing occupancy \(c_{t,u}\) and normalized speed \(v_{t,u}\). UrbanDreamer decodes these attributes from \(Z_t\) with SiLU activation followed by separate linear channel heads:
+\begin{equation}
+\begin{array}{rcl}
+\hat x^{\mathrm{dyn}}_{t,u}
+=
+[\hat c_{t,u},\hat v_{t,u}] =
+h_\rho^x(\mathrm{SiLU}(W_d z_{t,u})).
+\end{array}
+\end{equation}
+
+The decoder is trained jointly with the dynamics model by adding the  reconstruction loss on observed traffic fields:
+\begin{equation}
+\begin{array}{rcl}
+\mathcal{L}_{\mathrm{rec}}
+&=&
+\displaystyle
+\frac{1}{M}\sum_{u\in N}
+\|\hat x^{\mathrm{dyn}}_{t,u}-x^{\mathrm{dyn}}_{t,u}\|^2.
+\end{array}
+\end{equation}
+In actor-critic learning, the decoder is also used to calculate route-level episode rewards and value targets.
+% 中文注释：只有当 control 所需的 traffic quantities 可以从 latent representation 中重构出来时，该 representation 才能支持 policy learning。令 \(x^{\mathrm{dyn}}_{t,u}\) 表示 segment \(u\) 的动态观测向量，包括 occupancy、normalized speed、vehicle count 和 halting count。UrbanDreamer 通过 shared affine map 和 SiLU activation，再接独立的 linear channel heads，从 \(Z_t\) 中解码这些量。volume channel 在作为物理非负 volume 使用前会经过 softplus 映射。decoded speed 和 volume 随后提供 imagined rewards 与 route-cost features 使用的 travel-time readouts。decoder 通过 observed traffic fields 上的 reconstruction loss \(\mathcal{L}_{\mathrm{dec}}\) 训练；在 online world-model training 中，同一个 decoder 也用于监督 flow-matching transition 之后预测出的 next-step latents。这个 autoencoding constraint 防止 latent traffic representation 丢弃后续 imagined rollouts 中计算 rewards、route-cost features 和 value targets 所需的 observable traffic variables。
+
+
+\subsubsection{Action Encoder}
+
+The transition model evolves graph-level traffic representations \(Z_t\), but
+decisions are made at the vehicle level: each active CAV
+selects one candidate route from its local observation. So we construct
+an action representation to connect the vehicle-level route decisions and graph-level traffic transitions. 
+
+
+We project the realized one-hot CAV route decisions onto the segment
+nodes that those routes are expected to visit. The result is a graph-level
+planned pressure field \(\Psi_t^{\mathrm{CAV}}\), defined on the
+same road segment set as \(X_t\) and \(Z_t\).
+% 中文注释：transition model 推进的是 graph-level traffic representations \(Z_t\)，但可控决策发生在 vehicle level：每个 active CAV 根据自己的 local observation 选择一条 candidate route。因此，UrbanDreamer 需要一个 action representation，将 vehicle-level route decisions 和 graph-level traffic transitions 放到同一个坐标系统中。我们通过把 CAV route probabilities 投影到这些 routes 预计会经过的 segment nodes 上来构造该表示。得到的结果是在与 \(X_t\) 和 \(Z_t\) 相同的 segment-node set 上定义的 graph-level planned pressure field \(A_t^{\mathrm{CAV}}\in\mathbb{R}^M\)。这使 CAV action 能够被 world model 使用，同时不替换 individual vehicles 在执行时使用的 route-choice interface。
+For active CAV \(i\), let \(\mathrm{Seg}_{\Delta}(P^k_{i,t})\subseteq
+N\)
+denote the segment nodes that vehicle \(i\) would enter within the
+look-ahead window \(\Delta\) if it followed candidate route
+\(P^k_{i,t}\). The planned pressure averages route indicators over the active
+set:
+\begin{equation}
+\begin{array}{rcl}
+\Psi_t^{\mathrm{CAV}}(u)
+=
+\displaystyle
+\frac{1}{\max(|\mathcal{I}_t|,1)}
+\sum_{i\in\mathcal{I}_t}\sum_{k=1}^{K}
+\mathbf{1}[k=a_{i,t}]
+\displaystyle
+\,\xi_{i,t}^{k,\Delta}(u),\\
+\xi_{i,t}^{k,\Delta}(u)
+=
+\left\{
+\begin{array}{ll}
+1, & u\in\mathrm{Seg}_{\Delta}(P^k_{i,t})\\
+0, & \mathrm{otherwise}
+\end{array}
+\right.
+\end{array}
+\end{equation}
+The same sampled one-hot route is executed by the vehicle, stored in replay,
+and supplied to the transition condition, so \(\Psi_t^{\mathrm{CAV}}\) always
+matches the physical intervention.  The mean normalization states where the
+controlled demand intends to go; the absolute controlled volume enters the
+transition separately through the active-CAV fraction in \(C_t\).
+
+
+% 中文注释：本段给出 planned CAV pressure 的定义：对每辆 active CAV，统计其实际采样的 one-hot route 在 look-ahead window \(\Delta\) 内将进入的 segment 集合，对 active CAV 数取平均（分母用 \(\max(|\mathcal I_t|,1)\) 防空集）。执行、replay 和 transition 条件使用同一个 sampled one-hot，保证 action alignment；绝对控制流量由 \(C_t\) 中的 active-CAV 比例单独进入 transition。
+
+
+\subsubsection{State-to-State Flow Matching}
+
+UrbanDreamer learns the latent transition with state-to-state flow
+matching. The transition condition consists of planned CAV pressure,
+departure demand, HDV influence, and episode context:
+\begin{equation}
+\mathcal{C}_t=
+(\Psi_t^{\mathrm{CAV}},D_t,H_t^{\mathrm{HDV}},C_t),
+\end{equation}
+where \(C_t=[\,t/T,\ |\mathcal{I}_t|/|N^{\mathrm{CAV}}|,\
+|\mathcal{N}_t^{\mathrm{HDV}}|/|N^{\mathrm{HDV}}|\,]\) carries the normalized
+decision time and the active CAV and HDV fractions.
+Instead of regressing \(Z_{t+1}\) directly, the model learns a velocity field
+that transports the current latent representation to the next one under
+\(\mathcal{C}_t\). For a real transition pair \((Z_t,Z_{t+1})\), sample
+\(\tau\sim\mathcal{U}(0,1)\) and define
+\begin{equation}
+\begin{array}{rcl}
+x_\tau &=& (1-\tau)Z_t+\tau Z_{t+1},\\
+\nu_{t,\tau} &=& \frac{dx_\tau}{d\tau} = Z_{t+1}-Z_t. 
+\end{array}
+\end{equation}
+The previous latent traffic representation \(Z_t\) is the flow
+source, and \(\nu_{t,\tau}\) is the target velocity.  This is a deterministic
+state-to-state transport in the spirit of rectified
+flow \cite{lipman2023flow,liu2023rectified}: the straight interpolation path
+keeps multi-step imagined rollouts stable, and we do not claim multimodal
+generative modeling of \(Z_{t+1}\).
+% 中文注释：UrbanDreamer 使用 state-to-state flow matching 学习一步 latent transition。transition condition 由 planned CAV pressure、departure demand、HDV response 和 episode context 组成，即 \(\mathcal{C}_t=(\Psi_t^{\mathrm{CAV}},D_t,H_t^{\mathrm{HDV}},C_t)\)。模型不是直接回归 \(Z_{t+1}\)，而是在 \(\mathcal{C}_t\) 条件下学习一个 flow-matching velocity field，将当前 latent representation 推进到下一步。这个损失在优化时不需要 simulator rollout，推理时可以通过 integration steps 在精度和计算量之间权衡，同时 transition 仍然是强条件的一步模型，而不是开放式 sequence generator。这里 \(t\) 表示 traffic decision epoch，而 \(\tau\in[0,1]\) 表示连续 flow path。对于真实 transition pair \((Z_t,Z_{t+1})\)，采样 \(\tau\sim\mathcal{U}(0,1)\)，定义 \(x_0=Z_t\)、\(x_1=Z_{t+1}\)、\(x_\tau=(1-\tau)x_0+\tau x_1\)、\(\nu^\star_{t,\tau}=x_1-x_0\)。因此，previous latent traffic representation \(Z_t\) 是 flow source \(x_0\)，而不是额外提供给 velocity predictor 的输入。
+
+We parameterize the velocity predictor \(\nu_\phi\) with a block-causal
+transformer\cite{vaswani2017attention} over road segment traffic representations. At each decision
+epoch, the network receives the interpolated representation \(x_\tau\), time condition \(\tau\), and transition condition \(\mathcal{C}_t\). The transformer block mixes information through
+causal attention over previous traffic representations. A linear output head
+maps the resulting representations to the velocity estimate:
+\begin{equation}
+\hat\nu_{t,\tau}=\nu_\phi(x_\tau,\tau,\mathcal{C}_t).
+\end{equation}
+% 中文注释：我们使用 segment-node traffic representations 上的 block-causal Transformer 来参数化 velocity predictor \(\nu_\phi\)。在每个 decision epoch，网络接收插值后的 representation \(x_\tau\)、\(\tau\) 的 flow-time embedding，以及由 \(\mathcal{C}_t\) 得到的 graph-aligned condition representations。Transformer 在同一步内混合 segment nodes 之间的信息，并通过 previous traffic representations 上的 causal attention 传播 temporal context。线性输出头将得到的 representations 映射为 velocity estimate \(\hat\nu_{t,\tau}=\nu_\phi(x_\tau,\tau,\mathcal{C}_t)\)。
+Because most road segments are empty most of the time, an
+unweighted objective would be dominated by nearly unchanged segment states. The training
+loss therefore applies segment weights \(w_{t,u}\) that emphasize
+occupied and congested segments while bounding the maximum weight to prevent
+degenerate focusing:
+\begin{equation}
+\begin{array}{l}
+\mathcal{L}_{\mathrm{FM}}
+=
+{E}_{t,\tau}
+\left[
+\sum_{u\in N}w_{t,u}\|\hat\nu_{t,\tau,u}-\nu_{t,\tau,u}\|^2
+\right],
+\end{array}
+\end{equation}
+% 中文注释：本段给出 velocity-field prediction 与加权 flow-matching 损失。残差 \(\delta_{t,\tau,u}\) 比较模型在 decision epoch \(t\)、flow time \(\tau\)、segment \(u\) 上预测的 velocity 和目标 velocity \(\nu^\star_{t,\tau,u}\)。权重 \(w_{t,u}\) 偏向有车和拥堵的 segment 并设上限防止退化聚焦；动机是绝大多数 segment 长期空闲，不加权会被自由流预测淹没。损失本身不需要模拟器 rollout。
+
+At imagination time, \(Z_{t+1}\) is unavailable, the next latent traffic representation is obtained by
+integrating the learned velocity field:
+\begin{equation}
+\begin{array}{rcl}
+\hat Z_{t+1}
+&=&
+\displaystyle
+Z_t+\int_0^1
+\nu_\phi(\hat x_\tau,\tau,\mathcal{C}_t)\,d\tau.
+\end{array}
+\end{equation}
+Multi-step imagination repeatedly applies this one-step transition, using
+each predicted \(\hat Z_{t+1}\) as the next source representation.
+% 中文注释：本段说明想象阶段的推理方式：从 \(x_0=Z_t\) 出发对速度场做 ODE 积分得到 \(\hat Z_{t+1}\)；多步想象反复应用该一步 transition，把每次预测作为下一步的流源。写作功能：闭合 3.2 的训练—推理回路。
+
+
+\subsection{HDV Response Module}
+
+HDVs choose routes at departure time according to their own travel intent, and
+adapt across episodes to the congestion that CAV routing induces.  UrbanDreamer
+models the two time scales of this interaction separately.  Within an episode,
+the learned transition responds to the current CAV pressure
+\(\Psi_t^{\mathrm{CAV}}\) at every decision epoch.  Across episodes, human
+adaptation is slower than a single route decision, so it is represented as an
+episode-level response field over road segments that is predicted from the
+previous episode and held fixed within each imagined episode.  Imagined
+rollouts therefore optimize against step-level counterfactual traffic
+responses, while day-to-day HDV demand shifts are learned from real simulator
+episodes rather than simulated inside imagination.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\linewidth]{figure/HDV response preditor.png}
+    \caption{HDV response predictor}
+    \label{fig:hdv-response}
+\end{figure}
+
+\subsubsection{Response Target}
+
+We represent the HDV influence as the road-segment distribution
+\(H^{\mathrm{HDV}}\), where each entry summarizes how strongly
+the human-driven traffic background is associated with one road segment. Let \(h^{\mathrm{HDV}}_t\) denote the observed HDV
+background field over road segments at decision epoch \(t\).  For an observed
+episode of length \(T\), the supervision target is obtained by aggregating
+this background field over time and normalizing it across road segments:
+\begin{equation}
+\begin{array}{rcl}
+H^\star
+&=&
+\mathrm{Norm}\!\left(
+\displaystyle\frac{1}{T}\sum_{t=1}^{T} h^{\mathrm{HDV}}_t
+\right),
+\end{array}
+\end{equation}
+where \(\mathrm{Norm}\) clips negative entries and rescales the vector to sum
+to one. \(H^\star\) is the 
+HDV response field that summarizes the realized HDV traffic pattern
+under the episode-level CAV pressure pattern.
+% 中文注释：令 \(h^{\mathrm{HDV}}_t\in\mathbb{R}_{\ge0}^{M}\) 表示在 decision epoch \(t\) 观测到的 road segments 上的 HDV background field。对于长度为 \(T\) 的 observed episode，supervision target 通过在时间上聚合这个 background field 并在 road segments 上归一化得到：\(H^\star=\mathrm{Norm}(\frac{1}{T}\sum_{t=1}^{T}h^{\mathrm{HDV}}_t)\)。其中 \(\mathrm{Norm}\) 会裁剪负值并把向量重新缩放到和为 1。因此，\(H^\star\) 不是 per-vehicle route label；它是一个 slow background-response field，概括了 episode-level CAV pressure pattern 下实际形成的 HDV traffic pattern。
+
+
+\subsubsection{Auxiliary Response Prediction}
+
+The response predictor estimates how the HDV background evolves from one
+episode to the next after observing the previous episode's CAV pressure and
+HDV state.  For episode \(e\), we first summarize the CAV pressure in the
+previous episode:
+\begin{equation}
+\begin{array}{rcl}
+\bar\Psi_{e-1}^{\mathrm{CAV}}
+&=&
+\mathrm{Norm}\!\left(
+\displaystyle\frac{1}{T_{e-1}}
+\sum_{t=0}^{T_{e-1}-1}\Psi_{e-1,t}^{\mathrm{CAV}}
+\right),
+\end{array}
+\end{equation}
+and combine it with the previous HDV background
+\(H_{e-1}^{\mathrm{HDV}}\). The HDV response predictor is an MLP \(f_\psi^{\mathrm{HDV}}\)
+followed by a softmax over road segments:
+\begin{equation}
+\begin{array}{rcl}
+\hat H_e^{\mathrm{HDV}}
+&=&
+g_\psi^{\mathrm{HDV}}
+\!\left(
+\bar\Psi_{e-1}^{\mathrm{CAV}},
+H_{e-1}^{\mathrm{HDV}}
+\right),\\[0.35em]
+g_\psi^{\mathrm{HDV}}(\cdot)
+&=&
+\mathrm{softmax}\!\left(f_\psi^{\mathrm{HDV}}(\cdot)\right).
+\end{array}
+\end{equation}
+During supervised training,
+the response loss is a soft-label
+cross entropy over adjacent episode pairs:
+\begin{equation}
+\begin{array}{rcl}
+\mathcal{L}_{\mathrm{resp}}
+&=&
+\displaystyle
+-
+\frac{1}{|\mathcal{E}_{\mathrm{pair}}|}
+\sum_{e\in\mathcal{E}_{\mathrm{pair}}}
+\sum_{u\in N}
+H_e^\star(u)
+\log \hat H_e^{\mathrm{HDV}}(u).
+\end{array}
+\end{equation}
+Here \(\mathcal{E}_{\mathrm{pair}}\) is the set of training episodes whose
+previous episode is available. \(H_e^\star\) is the target HDV response field.
+The response predictor and the base world model are optimized by two
+independent objectives with separate optimizers:
+\begin{equation}
+\begin{array}{rcl}
+\mathcal{L}_{\phi}
+&=&
+\mathcal{L}_{\mathrm{FM}}
++
+\lambda_{\mathrm{rec}}\mathcal{L}_{\mathrm{rec}},\\[0.35em]
+\mathcal{L}_{\psi}
+&=&
+\mathcal{L}_{\mathrm{resp}}.
+\end{array}
+\end{equation}
+\(\mathcal{L}_{\phi}\) updates the encoder, flow dynamics, and decoder, while
+\(\mathcal{L}_{\psi}\) updates only the response predictor \(g_\psi^{\mathrm{HDV}}\).
+This auxiliary predictor gives the world model a dedicated channel for
+slow HDV adaptation across episodes, while preserving the modeling assumption
+that HDVs are not controlled by the learned CAV policy.
+% 中文注释：response predictor 估计 HDV background 在观察上一 episode 的 CAV pressure 和 HDV state 之后如何从一个 episode 演化到下一个 episode。对于 episode \(e\)，我们首先概括上一 episode 中的 CAV pressure：\(\bar\Psi_{e-1}^{\mathrm{CAV}}=\mathrm{Norm}(\frac{1}{T_{e-1}}\sum_{t=0}^{T_{e-1}-1}\Psi_{e-1,t}^{\mathrm{CAV}})\)，并将其与 previous HDV background \(H_{e-1}^{\mathrm{HDV}}\) 和 episode context \(\rho_e\) 结合。在我们的实现中，\(\rho_e\) 是 online response predictor 使用的 normalized episode progress。predictor 是一个 MLP \(f_\psi^{\mathrm{HDV}}\)，后接 road segments 上的 softmax：\(\hat H_e^{\mathrm{HDV}}=g_\psi^{\mathrm{HDV}}(\bar\Psi_{e-1}^{\mathrm{CAV}},H_{e-1}^{\mathrm{HDV}},\rho_e)\)，且 \(g_\psi^{\mathrm{HDV}}(\cdot)=\mathrm{softmax}(f_\psi^{\mathrm{HDV}}(\cdot))\)。在 supervised training 中，\(H_{e-1}^{\mathrm{HDV}}\) 是 observed previous target \(H_{e-1}^\star\)，prediction target 是 \(H_e^\star\)。在 online prediction time，\(H_{e-1}^{\mathrm{HDV}}\) 是最近可用的 previous-episode HDV state。response loss 是 adjacent episode pairs 上的 soft-label cross entropy：\(\mathcal{L}_{\mathrm{resp}}=-\frac{1}{|\mathcal{E}_{\mathrm{pair}}|}\sum_{e\in\mathcal{E}_{\mathrm{pair}}}\sum_{u\in N}H_e^\star(u)\log\hat H_e^{\mathrm{HDV}}(u)\)。这里 \(\mathcal{E}_{\mathrm{pair}}\) 是 previous episode 可用的 training episodes 集合。response module 作为 training pipeline 的 auxiliary component 优化；它的 loss 与 transition matching 和 representation reconstruction 一起构成整体 learned-model objective：\(\mathcal{L}_{\mathrm{WM}}=\mathcal{L}_{\mathrm{FM}}+\lambda_{\mathrm{dec}}\mathcal{L}_{\mathrm{dec}}+\lambda_{\mathrm{resp}}\mathcal{L}_{\mathrm{resp}}\)。这个 auxiliary objective 为 world model 提供了专门建模跨 episode 的 slow HDV adaptation 的通道，同时保留 HDV 不受 learned CAV policy 控制的建模假设。
+
+
+
+\input{sections/actor-critic}

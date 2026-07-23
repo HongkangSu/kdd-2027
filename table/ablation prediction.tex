@@ -1,0 +1,19 @@
+\begin{table}[t]
+  \centering
+  \caption{8-step frozen-trace prediction error (lower is better).}
+  \renewcommand{\arraystretch}{1.0}
+  \resizebox{\columnwidth}{!}{%
+    \begin{tabular}{lcccc}
+      \toprule
+      \multirow{2}{*}{Network} & \multicolumn{2}{c}{Speed MAE $\downarrow$} & \multicolumn{2}{c}{Vehicle Count MAE $\downarrow$} \\
+      \cmidrule(lr){2-3} \cmidrule(lr){4-5}
+      & Flow Matching & MSE Loss & Flow Matching & MSE Loss \\
+      \midrule
+      Ingolstadt & \textbf{0.408} & 0.433 & \textbf{0.060} & 0.066 \\
+      Gretz-Armainvilliers & \textbf{0.274} & 0.473 & \textbf{0.104} & 0.125 \\
+      Fontenay-en-Parisis & \textbf{0.209} & 0.233 & \textbf{0.107} & 0.112 \\
+      \bottomrule
+    \end{tabular}%
+  }
+  \label{tab:wm-prediction-ablation}
+\end{table}
