@@ -19,15 +19,15 @@ prediction problem:
   \hat Z_{t+1}
   &=&
   F_\phi(
-  Z_t; \Psi_t^{\mathrm{CAV}},D_t,H_t^{\mathrm{HDV}},C_t
+  Z_t; \Psi_t^{\mathrm{CAV}},D_t,H_t^{\mathrm{HDV}},c_t
   ),
   \end{array}
 \end{equation}
 where \(\mathbf a_t\) is the joint route action of the active CAVs, \(D_t\) is
 the departure demand, \(H_t^{\mathrm{HDV}}\) is the HDV traffic influence, and
-\(C_t\) is an episode context containing the normalized decision time and the
+\(c_t\) is an episode context containing the normalized decision time and the
 active CAV and HDV fractions.
-% 中文注释：基于这些 observations，UrbanDreamer 将 MDP transition 映射为一个 latent prediction problem：\(Z_t=f_\phi(X_t,G)\)，\(\Psi_t^{\mathrm{CAV}}=\Pi_G(\mathbf a_t,\mathcal{I}_t)\)，并由 \(F_\phi\) 在 \(\Psi_t^{\mathrm{CAV}}\)、\(D_t\)、\(H_t^{\mathrm{HDV}}\) 和 episode context \(C_t\) 的条件下预测 \(\hat Z_{t+1}\)。其中 \(\mathbf a_t\) 是 active CAVs 实际执行的 joint route action，\(C_t\) 包含归一化决策时间和 active CAV/HDV 比例。learned transition 不是新的 problem definition，而是 policy learning 中使用的 MDP transition surrogate。
+% 中文注释：基于这些 observations，UrbanDreamer 将 MDP transition 映射为一个 latent prediction problem：\(Z_t=f_\phi(X_t,G)\)，\(\Psi_t^{\mathrm{CAV}}=\Pi_G(\mathbf a_t,\mathcal{I}_t)\)，并由 \(F_\phi\) 在 \(\Psi_t^{\mathrm{CAV}}\)、\(D_t\)、\(H_t^{\mathrm{HDV}}\) 和 episode context \(c_t\) 的条件下预测 \(\hat Z_{t+1}\)。其中 \(\mathbf a_t\) 是 active CAVs 实际执行的 joint route action，\(c_t\) 包含归一化决策时间和 active CAV/HDV 比例。learned transition 不是新的 problem definition，而是 policy learning 中使用的 MDP transition surrogate。
 
 \begin{figure}
     \centering
@@ -148,10 +148,10 @@ The same sampled one-hot route is executed by the vehicle, stored in replay,
 and supplied to the transition condition, so \(\Psi_t^{\mathrm{CAV}}\) always
 matches the physical intervention.  The mean normalization states where the
 controlled demand intends to go; the absolute controlled volume enters the
-transition separately through the active-CAV fraction in \(C_t\).
+transition separately through the active-CAV fraction in \(c_t\).
 
 
-% 中文注释：本段给出 planned CAV pressure 的定义：对每辆 active CAV，统计其实际采样的 one-hot route 在 look-ahead window \(\Delta\) 内将进入的 segment 集合，对 active CAV 数取平均（分母用 \(\max(|\mathcal I_t|,1)\) 防空集）。执行、replay 和 transition 条件使用同一个 sampled one-hot，保证 action alignment；绝对控制流量由 \(C_t\) 中的 active-CAV 比例单独进入 transition。
+% 中文注释：本段给出 planned CAV pressure 的定义：对每辆 active CAV，统计其实际采样的 one-hot route 在 look-ahead window \(\Delta\) 内将进入的 segment 集合，对 active CAV 数取平均（分母用 \(\max(|\mathcal I_t|,1)\) 防空集）。执行、replay 和 transition 条件使用同一个 sampled one-hot，保证 action alignment；绝对控制流量由 \(c_t\) 中的 active-CAV 比例单独进入 transition。
 
 
 \subsubsection{State-to-State Flow Matching}
@@ -161,9 +161,9 @@ matching. The transition condition consists of planned CAV pressure,
 departure demand, HDV influence, and episode context:
 \begin{equation}
 \mathcal{C}_t=
-(\Psi_t^{\mathrm{CAV}},D_t,H_t^{\mathrm{HDV}},C_t),
+(\Psi_t^{\mathrm{CAV}},D_t,H_t^{\mathrm{HDV}},c_t),
 \end{equation}
-where \(C_t=[\,t/T,\ |\mathcal{I}_t|/|N^{\mathrm{CAV}}|,\
+where \(c_t=[\,t/T,\ |\mathcal{I}_t|/|N^{\mathrm{CAV}}|,\
 |\mathcal{N}_t^{\mathrm{HDV}}|/|N^{\mathrm{HDV}}|\,]\) carries the normalized
 decision time and the active CAV and HDV fractions.
 Instead of regressing \(Z_{t+1}\) directly, the model learns a velocity field
@@ -182,7 +182,7 @@ state-to-state transport in the spirit of rectified
 flow \cite{lipman2023flow,liu2023rectified}: the straight interpolation path
 keeps multi-step imagined rollouts stable, and we do not claim multimodal
 generative modeling of \(Z_{t+1}\).
-% 中文注释：UrbanDreamer 使用 state-to-state flow matching 学习一步 latent transition。transition condition 由 planned CAV pressure、departure demand、HDV response 和 episode context 组成，即 \(\mathcal{C}_t=(\Psi_t^{\mathrm{CAV}},D_t,H_t^{\mathrm{HDV}},C_t)\)。模型不是直接回归 \(Z_{t+1}\)，而是在 \(\mathcal{C}_t\) 条件下学习一个 flow-matching velocity field，将当前 latent representation 推进到下一步。这个损失在优化时不需要 simulator rollout，推理时可以通过 integration steps 在精度和计算量之间权衡，同时 transition 仍然是强条件的一步模型，而不是开放式 sequence generator。这里 \(t\) 表示 traffic decision epoch，而 \(\tau\in[0,1]\) 表示连续 flow path。对于真实 transition pair \((Z_t,Z_{t+1})\)，采样 \(\tau\sim\mathcal{U}(0,1)\)，定义 \(x_0=Z_t\)、\(x_1=Z_{t+1}\)、\(x_\tau=(1-\tau)x_0+\tau x_1\)、\(\nu^\star_{t,\tau}=x_1-x_0\)。因此，previous latent traffic representation \(Z_t\) 是 flow source \(x_0\)，而不是额外提供给 velocity predictor 的输入。
+% 中文注释：UrbanDreamer 使用 state-to-state flow matching 学习一步 latent transition。transition condition 由 planned CAV pressure、departure demand、HDV response 和 episode context 组成，即 \(\mathcal{C}_t=(\Psi_t^{\mathrm{CAV}},D_t,H_t^{\mathrm{HDV}},c_t)\)。模型不是直接回归 \(Z_{t+1}\)，而是在 \(\mathcal{C}_t\) 条件下学习一个 flow-matching velocity field，将当前 latent representation 推进到下一步。这个损失在优化时不需要 simulator rollout，推理时可以通过 integration steps 在精度和计算量之间权衡，同时 transition 仍然是强条件的一步模型，而不是开放式 sequence generator。这里 \(t\) 表示 traffic decision epoch，而 \(\tau\in[0,1]\) 表示连续 flow path。对于真实 transition pair \((Z_t,Z_{t+1})\)，采样 \(\tau\sim\mathcal{U}(0,1)\)，定义 \(x_0=Z_t\)、\(x_1=Z_{t+1}\)、\(x_\tau=(1-\tau)x_0+\tau x_1\)、\(\nu^\star_{t,\tau}=x_1-x_0\)。因此，previous latent traffic representation \(Z_t\) 是 flow source \(x_0\)，而不是额外提供给 velocity predictor 的输入。
 
 We parameterize the velocity predictor \(\nu_\phi\) with a block-causal
 transformer\cite{vaswani2017attention} over road segment traffic representations. At each decision
