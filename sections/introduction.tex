@@ -72,15 +72,15 @@ basis for policy evaluation.
 
 The technical contributions are threefold:
 \begin{itemize}
+  \item We formulate a world-model-based MARL framework for mixed-autonomy
+  dynamic routing whose goal is to reduce real simulator interaction:
+  additional CAV policy updates are performed in learned latent traffic
+  dynamics instead of repeated microscopic simulation.
   \item We introduce a graph-aligned action interface and traffic world model
   that connect executable per-CAV route choices to segment-level latent
-  transitions.  The model combines graph convolutional traffic encoding with
-  conditioned state-to-state flow matching for spatiotemporal prediction.
-  \item We introduce a history-conditioned, slow-timescale model of aggregate
-  HDV response rather than treating HDVs as fixed noise or an additional
-  controllable action.  An episode-level predictor estimates aggregate HDV
-  route demand from preceding CAV pressure and HDV demand, and conditions
-  subsequent imagined traffic transitions on that estimate.
+  transitions, combining graph convolutional traffic encoding with conditioned
+  state-to-state flow matching, together with a history-conditioned,
+  slow-timescale model of aggregate HDV response.
   \item We develop identity-preserving imagined route learning with a
   parameter-shared CAV actor, a centralized per-vehicle critic, and an auxiliary
   global critic.  A two-stage, simulator-grounded training pipeline alternates
@@ -88,11 +88,11 @@ The technical contributions are threefold:
   optimization.
 \end{itemize}
 
-The experimental protocol spans three urban road networks instantiated through
-the RouteRL and Urban Routing Benchmark (URB) framework, containing 636, 1,035,
-and 2,068 scheduled vehicles.  It compares UrbanDreamer against greedy routing
-and model-free MARL baselines along six planned evaluation axes: global
-route-control quality, population-specific outcomes, real simulator interaction,
-computational cost, component effects, and predictive diagnostics.  A synthetic
-cross-bottleneck network is reserved for controlled behavioral analysis rather
-than used as the headline task.
+Experiments on three urban road networks instantiated through the RouteRL and
+Urban Routing Benchmark (URB) framework, containing 636, 1,035, and 2,068
+scheduled vehicles, show that UrbanDreamer reaches strong routing policies
+with substantially fewer real simulator interactions and lower wall-clock
+training time than model-free MARL baselines.  This efficiency gain does not
+sacrifice final policy quality: UrbanDreamer achieves the best final routing
+performance among the evaluated learning-based methods and remains competitive
+with routing heuristics.

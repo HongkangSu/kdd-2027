@@ -1,6 +1,6 @@
 \section{Experiments}
 
-We evaluate UrbanDreamer in the SUMO traffic simulator on three urban road networks. The experiments consist of three parts: overall performance, efficiency and scalability, and the ablation study.
+We evaluate UrbanDreamer in the SUMO traffic simulator on three urban road networks. The experiments consist of three parts: sample and computational efficiency, final routing quality, and the ablation study.
 
 \subsection{Experimental Settings}
 
@@ -16,17 +16,6 @@ We compare UrbanDreamer with two heuristic methods and four MARL methods. Free-f
 \subsubsection{Evaluation Metrics}
 
 All methods are evaluated using the same route candidates, traffic demand, disruption settings, simulation horizon, and initial HDV state. We use the global mean travel time \(T_{\mathrm{all}}\) as the primary metric and additionally report the mean travel times of CAVs and HDVs, denoted by \(T_{\mathrm{CAV}}\) and \(T_{\mathrm{HDV}}\), respectively.
-
-
-\subsection{Overall Performance}
-
-Table~\ref{tab:overall-performance} reports the mean travel times of all vehicles, CAVs, and HDVs on the three urban networks. All travel times are measured in minutes, and lower values indicate better performance.
-
-\input{table/overall performance}
-
-UrbanDreamer achieves the best overall performance on Gretz-Armainvilliers and Fontenay-en-Parisis and remains competitive with live-current greedy on Ingolstadt. It consistently outperforms all learning-based baselines across the three networks, establishing state-of-the-art performance among learning-based methods. The improvements are primarily reflected in lower CAV travel times, while \(T_{\mathrm{HDV}}\) remains competitive, indicating that the overall gains are not achieved at the expense of HDVs.
-
-% 中文注释：UrbanDreamer 在 Gretz-Armainvilliers 上的三个完成率有效通行时间指标中均取得最佳结果。它的 \(t_{\mathrm{all}}\) 分别比 free-flow greedy 和 live-current greedy 低 0.7076 分钟和 0.5761 分钟，对应 14.68\% 和 12.28\% 的下降。MAPPO 在该网络上的完成率只有 89.62\%，因此不参与通行时间排名。
 
 
 \subsection{Efficiency and Scalability}
@@ -68,22 +57,23 @@ Table~\ref{tab:computational-efficiency-archive} reports the total training time
 
 Figure~\ref{fig:scalability_training_time} compares training time across road networks with increasing numbers of road segments. Training time increases for all methods as the network grows, while UrbanDreamer remains consistently faster than the baselines. Its training time increases from 5.566 hours on Ingolstadt (853 road segments) to 17.419 hours on Gretz-Armainvilliers (4,485 road segments) and 33.302 hours on Fontenay-en-Parisis (7,585 road segments), whereas the baselines require 96.2--134.5 hours on the largest network. Thus, UrbanDreamer's absolute training-time advantage becomes more pronounced as the road-network size increases.
 
+\subsection{Final Routing Quality}
+
+Table~\ref{tab:overall-performance} reports the mean travel times of all vehicles, CAVs, and HDVs on the three urban networks. All travel times are measured in minutes, and lower values indicate better performance.
+
+\input{table/overall performance}
+
+UrbanDreamer achieves the best final routing performance among the evaluated learning-based methods on all three networks. It also attains the lowest global mean travel time overall on Gretz-Armainvilliers and Fontenay-en-Parisis and remains competitive with live-current greedy on Ingolstadt. The gains are primarily reflected in lower CAV travel times, while \(T_{\mathrm{HDV}}\) remains competitive, indicating that they are not achieved at the expense of HDVs. The reduced simulator interaction therefore does not come at the cost of final routing quality.
+
+% 中文注释：UrbanDreamer 在 Gretz-Armainvilliers 上的三个完成率有效通行时间指标中均取得最佳结果。它的 \(t_{\mathrm{all}}\) 分别比 free-flow greedy 和 live-current greedy 低 0.7076 分钟和 0.5761 分钟，对应 14.68\% 和 12.28\% 的下降。MAPPO 在该网络上的完成率只有 89.62\%，因此不参与通行时间排名。
+
+
 \subsection{Ablation}
 
 We evaluate the contributions of world model imagination, HDV response prediction, the vehicle and global critics, and the flow-matching transition model through controlled ablations. 
 
-We conduct three groups of ablation experiments. Component ablation evaluates the effects of the main components on routing performance, efficiency ablation examines the contribution of world-model imagination to sample efficiency, and transition ablation compares the predictive quality of different transition models.
+We conduct three groups of ablation experiments. Efficiency ablation first isolates the contribution of world-model imagination to sample efficiency, component ablation evaluates the effects of the main components on final routing quality, and transition ablation compares the predictive quality of different transition models.
 
-
-\subsubsection{Component Ablation}
-
-We compare UrbanDreamer with five variants to assess the contribution of each component to routing performance. Actor-Critic removes world-model imagination, w/o HDV Response removes HDV influence prediction, Vehicle Critic Only and Global Critic Only retain a single critic, and MSE Transition replaces flow matching with deterministic next-state regression.
-
-
-
-\input{table/ablation performance}
-
-Table~\ref{tab:ablation performance} shows that UrbanDreamer achieves the lowest \(T_{\mathrm{all}}\) and \(T_{\mathrm{CAV}}\) on all three networks. Every ablated variant increases \(T_{\mathrm{all}}\), with Global Critic Only causing the largest degradation, highlighting the importance of vehicle-level learning signals. Replacing flow matching with MSE regression also yields higher \(T_{\mathrm{all}}\) on all three networks.
 
 \subsubsection{Efficiency Ablation}
 
@@ -97,6 +87,16 @@ Table~\ref{tab:ablation performance} shows that UrbanDreamer achieves the lowest
 \end{figure*}
 
 We compare UrbanDreamer with Actor-Critic (No World Model) to isolate the effect of world-model imagination. Figure~\ref{fig:efficiency_ablation} shows that UrbanDreamer improves substantially faster and reaches stable performance with fewer environment steps on all three networks, demonstrating that world model imagination improves sample efficiency.
+
+\subsubsection{Component Ablation}
+
+We compare UrbanDreamer with five variants to assess the contribution of each component to routing performance. Actor-Critic removes world-model imagination, w/o HDV Response removes HDV influence prediction, Vehicle Critic Only and Global Critic Only retain a single critic, and MSE Transition replaces flow matching with deterministic next-state regression.
+
+
+
+\input{table/ablation performance}
+
+Table~\ref{tab:ablation performance} shows that UrbanDreamer achieves the lowest \(T_{\mathrm{all}}\) and \(T_{\mathrm{CAV}}\) on all three networks. Every ablated variant increases \(T_{\mathrm{all}}\), with Global Critic Only causing the largest degradation, highlighting the importance of vehicle-level learning signals. Replacing flow matching with MSE regression also yields higher \(T_{\mathrm{all}}\) on all three networks.
 
 \subsubsection{Transition Ablation}
 
