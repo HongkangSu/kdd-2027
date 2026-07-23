@@ -24,11 +24,11 @@ We evaluate UrbanDreamer in terms of sample efficiency, computational efficiency
 
 \subsubsection{Sample Efficiency}
 
-We measure sample efficiency by the number of real SUMO environment steps required for each method to reach converged performance, defined as its best 20-episode moving-average \(T_{\mathrm{all}}\) during training. For UrbanDreamer, this count includes the SUMO environment steps used for warm-up data collection.
+We measure sample efficiency by the number of real SUMO environment steps each method requires to converge. We declare convergence when the standard deviation of \(T_{\mathrm{all}}\) over a window of 20 consecutive training episodes falls below 0.06. For UrbanDreamer, this count includes the SUMO environment steps used for warm-up data collection.
 
 \input{table/sample effiency}
 
-Figure~\ref{fig:sample-efficiency-training-proxy} shows the training curves, and Table~\ref{tab:sample-efficiency} reports the environment steps required to reach the best training performance. UrbanDreamer requires 2,040, 2,220, and 2,160 environment steps on Gretz-Armainvilliers, Ingolstadt, and Fontenay-en-Parisis, respectively. Compared with MAPPO, which requires the fewest steps among the baselines, UrbanDreamer reduces the required environment steps by 42.4\%, 32.7\%, and 41.9\%.
+Figure~\ref{fig:sample-efficiency-training-proxy} shows the training curves, and Table~\ref{tab:sample-efficiency} reports the environment steps required to reach convergence. UrbanDreamer requires 2,040, 2,220, and 2,160 environment steps on Gretz-Armainvilliers, Ingolstadt, and Fontenay-en-Parisis, respectively. Compared with MAPPO, which requires the fewest steps among the baselines, UrbanDreamer reduces the required environment steps by 42.4\%, 32.7\%, and 41.9\%.
 
 \begin{figure*}[t]
   \centering
@@ -43,7 +43,7 @@ Figure~\ref{fig:sample-efficiency-training-proxy} shows the training curves, and
 
 \input{table/computation efficiency}
 
-Table~\ref{tab:computational-efficiency-archive} reports the total training time of each learning method (a per-stage breakdown for UrbanDreamer is given in Appendix~\ref{app:architecture}). UrbanDreamer completes training in 17.4, 5.6, and 33.3 hours on Gretz-Armainvilliers, Ingolstadt, and Fontenay-en-Parisis, respectively, reducing training time by 48.1\%, 55.6\%, and 65.4\% relative to the fastest baseline on each network.
+Table~\ref{tab:computational-efficiency-archive} reports the training time each learning method requires to reach convergence (a per-stage breakdown for UrbanDreamer is given in Appendix~\ref{app:architecture}). UrbanDreamer completes training in 17.4, 5.6, and 33.3 hours on Gretz-Armainvilliers, Ingolstadt, and Fontenay-en-Parisis, respectively, reducing training time by 48.1\%, 55.6\%, and 65.4\% relative to the fastest baseline on each network.
 
 
 \subsubsection{Scalability with Traffic-System Size}
