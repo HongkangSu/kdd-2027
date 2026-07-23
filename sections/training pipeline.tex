@@ -1,97 +1,59 @@
 \section{Training Pipeline}
+\label{app:training-pipeline}
 
-UrbanDreamer follows a two-stage training pipeline.  The first stage provides warmup learning for the dynamics model. The second stage
-alternates real simulator collection, causal HDV-response learning, online
-world-model updates, and imagined actor-critic optimization after every
-collected episode. Consequently, the model is continually adapted to the
-state-action distribution induced by the improving CAV policy, while policy
-learning remains grounded in newly observed traffic transitions.
-% 中文注释：UrbanDreamer 采用两阶段训练流程。第一阶段为 traffic world model 提供稳定的初始化。第二阶段在每个 collected episode 之后，依次交替进行 real simulator collection、causal HDV-response learning、online world-model updates 和 imagined actor-critic optimization。因此，world model 会持续适应不断改进的 CAV policy 所诱导的 state-action distribution，而 policy learning 仍以新观测到的 traffic transitions 为基础。
+UrbanDreamer trains in two stages: an offline warm-up that initializes the
+world model, and an episode-wise online stage that alternates simulator
+collection, world-model updates, and imagined actor--critic optimization.
 
-\subsubsection{Offline Warmup}
+\paragraph{World-model warm-up.}
+Before policy learning, we collect a fixed set of exploratory episodes in
+which every CAV follows an \(\epsilon\)-greedy routing rule over the candidate
+set, and fit the encoder, flow-matching dynamics, and decoder on the collected
+transitions by minimizing \(\mathcal{L}_\phi\).  The actor, critics, and
+response predictor are initialized at the start of the online stage.
+% 中文注释：策略学习之前，先收集一组固定的探索性 episodes（每辆 CAV 使用 epsilon-greedy 选路），并用 \(\mathcal{L}_\phi\) 拟合 encoder、flow-matching dynamics 和 decoder。actor、critics 和 response predictor 在 online stage 开始时初始化。
 
-Before online policy learning, we collect a fixed set of transitions from the simulator using exploratory CAV route choices. The encoder, flow-matching dynamics, and decoder are
-then fitted on these transitions using \(\mathcal{L}_\phi\). 
-% 中文注释：在 online policy learning 之前，我们从 post-mutation simulator state 收集一组固定 transitions；该阶段使用 exploratory CAV route choices，并冻结 HDV adaptation。随后，encoder、flow-matching dynamics 和 decoder 使用 \(\mathcal{L}_\phi\) 在这些 transitions 上完成初始化训练。causal HDV response predictor 不在该阶段训练，因为固定 collection 不能表示由持续变化的 CAV policy 引起的 episode-to-episode response。actor、critics 和 response predictor 在逐 episode online stage 开始时初始化。
+\paragraph{Episode-wise online learning.}
+Each online episode \(e\) runs the following cycle.  The current actor samples
+a masked route for every active CAV; the same sampled one-hot route is
+executed in the simulator, aggregated into \(\Psi_{e,t}^{\mathrm{CAV}}\), and
+stored in the bounded replay buffer \(\mathcal{B}\).  After the episode, HDV
+route probabilities are updated once
+(Appendix~\ref{app:hdv-adaptation}).  The causal
+response predictor then computes \(\hat H_e^{\mathrm{HDV}}\) from summaries of
+the preceding episodes and attaches it to the stored transitions, after which
+\(g_\psi^{\mathrm{HDV}}\) is updated on the available adjacent episode pairs by
+\(\mathcal{L}_\psi\), and the world model is updated on replay minibatches by
+\(\mathcal{L}_\phi\).  Finally, imagined actor--critic updates sample replay
+states, roll out \(L_{\mathrm{im}}\) imagined decisions with the stored HDV
+context, and update the actor and both critics from the per-vehicle and global
+lambda returns.  The actor is not updated on real simulator returns.
+% 中文注释：每个 online episode 执行以下循环：current actor 为每辆 active CAV 采样 masked route，同一个 one-hot route 用于执行、\(\Psi_{e,t}^{\mathrm{CAV}}\) 和 replay；episode 结束后按 Gawron 更新一次 HDV 路线概率；response predictor 仅用先前 episodes 的 summaries 计算 \(\hat H_e^{\mathrm{HDV}}\) 并附加到存储的 transitions 上，随后分别用 \(\mathcal{L}_\psi\) 和 \(\mathcal{L}_\phi\) 更新 response predictor 和 world model；最后从 replay 初始化 imagined rollouts，用 lambda returns 更新 actor 和两个 critics。actor 不直接使用真实仿真回报更新。
 
-\subsubsection{Online Training}
-
-During online collection, HDV adaptation is enabled and the current actor
-stochastically samples a valid route for every active CAV.  The same sampled
-one-hot decision is used to reroute the vehicle, construct
-\(\Psi_{e,t}^{\mathrm{CAV}}\), and store the world-model action in replay.
-This action alignment ensures that each observed transition is paired with the
-physical CAV intervention that actually produced it.  Deterministic masked
-argmax is reserved for simulator evaluation rather than training collection.
-% 中文注释：在 online collection 中，HDV adaptation 被启用，current actor 为每辆 active CAV 随机采样一条有效 route。同一个 sampled one-hot decision 同时用于对车辆执行 rerouting、构造 \(\Psi_{e,t}^{\mathrm{CAV}}\)，以及在 replay 中保存 world-model action。这样的 action alignment 保证每个 observed transition 都与实际产生它的物理 CAV intervention 配对。deterministic masked argmax 仅用于 simulator evaluation，而不用于 training collection。
-
-Only episodes satisfying the replay acceptance criterion are admitted to the
-bounded world-model replay buffer \(\mathcal{B}\).  Before the observed target
-\(H_e^\star\) of an accepted episode is exposed to the response predictor,
-\(\hat H_e^{\mathrm{HDV}}\) is computed using only summaries from preceding
-episodes and is attached to that episode's transitions.  After
-\(H_e^\star\) is recorded, the predictor is updated on the available adjacent
-episode pairs using \(\mathcal{L}_\psi\), and the world model is independently
-updated on real transition minibatches from \(\mathcal{B}\) using
-\(\mathcal{L}_\phi\).  This ordering prevents the current HDV target from
-leaking into its own causal prediction.
-% 中文注释：只有满足 replay acceptance criterion 的 episodes 才会进入有界的 world-model replay buffer \(\mathcal{B}\)。在 accepted episode 的 observed target \(H_e^\star\) 暴露给 response predictor 之前，\(\hat H_e^{\mathrm{HDV}}\) 只根据先前 episodes 的 summaries 计算，并附加到当前 episode 的 transitions 上。记录 \(H_e^\star\) 后，predictor 使用 \(\mathcal{L}_\psi\) 在已有的 adjacent episode pairs 上更新；world model 则使用 \(\mathcal{L}_\phi\) 在从 \(\mathcal{B}\) 采样的 real transition minibatches 上独立更新。这个顺序防止 current HDV target 泄漏到它自身的 causal prediction 中。
-
-The main online configuration does not apply a direct actor update to real
-simulator returns.  Instead, valid CAV decision states are sampled from
-\(\mathcal{B}\) to initialize the vehicle-level imagined rollouts described
-above.  Within each rollout, the actor samples masked route actions, the same
-one-hot actions define the vehicle wrapper and graph-level CAV pressure, and
-the world model predicts the resulting traffic evolution.  The resulting
-per-vehicle and global lambda returns jointly update the actor and both
-critics.
-% 中文注释：当前 online 主线不直接使用 real simulator returns 更新 actor。相反，训练从 \(\mathcal{B}\) 中采样包含有效 CAV decisions 的 states，并用它们初始化前文介绍的 vehicle-level imagined rollouts。在每个 rollout 内，actor 采样 masked route actions；相同的 one-hot actions 同时用于 vehicle wrapper 和 graph-level CAV pressure；world model 则预测由这些 actions 导致的 traffic evolution。最终得到的 per-vehicle 和 global lambda returns 共同用于更新 actor 和两个 critics。
+\paragraph{Policy selection.}
+At designated episodes, UrbanDreamer saves the actor, critics, world model,
+and response predictor together.  After training, each saved actor is
+evaluated in the simulator with the same masked stochastic route sampling used
+in collection, and the checkpoint with the lowest global mean travel time is
+returned.
+% 中文注释：在指定 episodes 保存全部模型。训练结束后，每个 saved actor 用与采集相同的 masked stochastic 采样在 simulator 中评估，返回 global mean travel time 最低的 checkpoint。
 
 \begin{algorithm}[t]
-\caption{Online training}
+\caption{Online training of UrbanDreamer}
 \label{alg:urbandreamer}
 \small
 \begin{algorithmic}
-\REQUIRE Road graph \(G\), simulator, training-episode budget, checkpoint indices
-\ENSURE Simulator-selected CAV route actor \(\pi_\theta\)
+\STATE \textbf{Warm-up:} collect exploratory episodes; fit world model by \(\mathcal{L}_\phi\)
 \FOR{each online episode \(e\)}
-  \STATE Collect one simulator episode using masked stochastic route samples from \(\pi_\theta\)
-  \STATE Reuse each sampled one-hot route for execution, \(\Psi_{e,t}^{\mathrm{CAV}}\), and replay
-  \IF{the episode satisfies the replay acceptance criterion}
-    \STATE Predict \(\hat H_e^{\mathrm{HDV}}\) from preceding episode summaries
-    \STATE Attach \(\hat H_e^{\mathrm{HDV}}\), append the episode to \(\mathcal{B}\), and discard stale transitions
-    \STATE Update \(g_\psi^{\mathrm{HDV}}\) on available adjacent episode pairs
-  \ENDIF
-  \IF{a world-model update is scheduled and \(\mathcal{B}\) is nonempty}
-    \FOR{each configured world-model update}
-      \STATE Sample real transitions from \(\mathcal{B}\) and minimize \(\mathcal{L}_\phi\)
-    \ENDFOR
-  \ENDIF
-  \IF{\(\mathcal{B}\) contains enough valid CAV decision states}
-    \FOR{each configured imagined actor-critic update}
-      \STATE Sample replay start states and initialize their vehicle states
-      \FOR{each of the next \(L_{\mathrm{im}}\) imagined decisions}
-        \STATE Sample masked routes from \(\pi_\theta\) and construct \(\Psi_t^{\mathrm{CAV}}\)
-        \STATE Predict \(Z_{t+1}\) using the stored causal HDV context
-        \STATE Advance the vehicle wrapper and record rewards and active masks
-      \ENDFOR
-      \STATE Compute lambda returns and update the actor and both critics
-    \ENDFOR
-  \ENDIF
-  \IF{\(e\) is a checkpoint episode}
-    \STATE Save the actor, critics, world model, and response predictor
-  \ENDIF
+  \STATE Collect episode with \(\pi_\theta\); store transitions in \(\mathcal{B}\)
+  \STATE Update HDV route probabilities (Gawron)
+  \STATE Predict \(\hat H_e^{\mathrm{HDV}}\); update \(g_\psi^{\mathrm{HDV}}\) by \(\mathcal{L}_\psi\)
+  \STATE Update world model on replay minibatches by \(\mathcal{L}_\phi\)
+  \FOR{each imagined update}
+    \STATE Roll out \(L_{\mathrm{im}}\) imagined steps from replay states
+    \STATE Update actor and critics by lambda returns
+  \ENDFOR
 \ENDFOR
-\STATE Evaluate saved actors in the simulator using masked argmax routes
-\RETURN The actor with the lowest global mean travel time
+\STATE Evaluate saved actors in the simulator; return the best
 \end{algorithmic}
 \end{algorithm}
-% 中文注释：Algorithm~\ref{alg:urbandreamer} 首先在冻结 HDV adaptation 的固定 warm-up transitions 上初始化 world model。进入 online stage 后，每个 episode 都使用 current actor 的 masked stochastic route samples 进行 simulator collection，并将同一个 sampled one-hot route 用于车辆执行、planned CAV pressure 和 replay。满足 acceptance criterion 的 episode 会先得到仅依赖先前 episode summaries 的 causal HDV prediction，再进入 bounded replay；随后分别更新 HDV response predictor 和 world model。当 replay 中存在足够的有效 CAV decision states 时，算法从 replay 初始化 imagined rollouts，在每一步采样 route、推进 world model 和 vehicle wrapper，并根据 lambda returns 联合更新 actor 与两个 critics。训练完成后，所有 saved actors 使用 masked argmax 在 simulator 中评估，并按照 global mean travel time 选择最终 actor。
-
-At designated episodes, UrbanDreamer saves the actor, critics, world model,
-and response predictor together.  After online training, each saved actor is
-evaluated in the real simulator with masked argmax route selection, and the
-checkpoint with the lowest global mean travel time is selected.  Simulator
-selection prevents favorable world-model errors from determining the final
-policy solely through imagined returns.
-% 中文注释：在指定 episodes，UrbanDreamer 会同时保存 actor、critics、world model 和 response predictor。online training 完成后，每个 saved actor 都使用 masked argmax route selection 在真实 simulator 中评估，并选择 global mean travel time 最低的 checkpoint。基于 simulator 的选择可以防止有利于 policy 的 world-model errors 仅通过 imagined returns 决定最终 policy。
