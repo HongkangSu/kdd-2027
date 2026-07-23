@@ -1,12 +1,12 @@
 \section{Experiments}
 
-We evaluate UrbanDreamer in the SUMO traffic simulator on three urban road networks. The experiments consist of three parts: sample and computational efficiency, final routing quality, and the ablation study.
+We evaluate UrbanDreamer in the SUMO traffic simulator \cite{lopez2018microscopic} on three urban road networks. The experiments consist of three parts: sample and computational efficiency, final routing quality, and the ablation study.
 
 \subsection{Experimental Settings}
 
 \subsubsection{Datasets and Road Networks}
 
-We evaluate UrbanDreamer on three urban road networks from the RouteRL and URB benchmarks \cite{akman2025routerl,akman2026urb}: Gretz-Armainvilliers (4,485 road segments and 636 agents), Ingolstadt (853 road segments and 1,035 agents), and Fontenay-en-Parisis (7,585 road segments and 2,068 agents). We set the CAV penetration rate to 40\%. To create congested bottlenecks, we impose temporary speed reductions on selected SUMO edges in each original network. The reductions follow a fixed time schedule within every episode, are identical across episodes, and are shared by all compared methods, so they act as a stationary property of each benchmark rather than an exogenous stochastic event.
+We evaluate UrbanDreamer on three urban road networks from the RouteRL and URB benchmarks \cite{akman2025routerl,akman2026urb}: Gretz-Armainvilliers (4,485 road segments and 636 agents), Ingolstadt \cite{lobo2020intas} (853 road segments and 1,035 agents), and Fontenay-en-Parisis (7,585 road segments and 2,068 agents). We set the CAV penetration rate to 40\%. To create congested bottlenecks, we impose temporary speed reductions on selected SUMO edges in each original network. The reductions follow a fixed time schedule within every episode, are identical across episodes, and are shared by all compared methods, so they act as a stationary property of each benchmark rather than an exogenous stochastic event.
 
 
 \subsubsection{Baselines}
