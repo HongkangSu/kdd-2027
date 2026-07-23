@@ -15,7 +15,7 @@ We compare UrbanDreamer with two heuristic methods and four MARL methods. Free-f
 
 \subsubsection{Evaluation Metrics}
 
-All methods are evaluated using the same route candidates, traffic demand, disruption settings, simulation horizon, and initial HDV state. We use the global mean travel time \(T_{\mathrm{all}}\) as the primary metric and additionally report the mean travel times of CAVs and HDVs, denoted by \(T_{\mathrm{CAV}}\) and \(T_{\mathrm{HDV}}\), respectively.
+All methods are evaluated using the same route candidates, traffic demand, disruption settings, simulation horizon, and initial HDV state. The simulation horizon is set long enough for every vehicle to reach its destination before the episode ends. We use the global mean travel time \(T_{\mathrm{all}}\) as the primary metric and additionally report the mean travel times of CAVs and HDVs, denoted by \(T_{\mathrm{CAV}}\) and \(T_{\mathrm{HDV}}\), respectively.
 
 
 \subsection{Efficiency and Scalability}
