@@ -6,7 +6,7 @@ per-vehicle critic. The actor selects a route from each CAV's local
 candidate set at execution time, while the critic jointly processes
 the active CAV observations during training and returns a separate value for
 each vehicle.  A global critic is retained as an auxiliary estimator of the
-global mean travel time.
+network-level cumulative return.
 % 中文注释：world model 推进 graph-level traffic representation \(Z_t\)，而 route actions、route progress 和 arrivals 都以 individual CAVs 为索引。若只用一个 graph-level value 概括 imagined rollout，就会丢失不同车辆在 destinations、remaining routes 和 termination times 上的差异。因此，UrbanDreamer 将 parameter-shared decentralized actor 与 centralized per-vehicle critic 结合起来。执行时，actor 从每辆 CAV 的 local candidate set 中选择 route；训练时，per-vehicle critic 联合处理 active CAV observations，并为每辆车分别输出一个 value。我们同时保留一个 global critic，作为 network-level rollout value 的辅助估计器。
 
 The global mean travel time in Definition~7 is an episode-level evaluation
@@ -305,28 +305,28 @@ advantage is computed from the per-vehicle critic.
 % 中文注释：辅助 global critic 复用 graph representation \(\bar z_t\)，并以 decision context \(c_t\)（归一化决策时间、active CAV/HDV 比例）为条件：\(v_t^{\mathrm{global}}=V_\omega^{\mathrm{global}}(\bar z_t,c_t)\)。planned CAV pressure \(\Psi_t^{\mathrm{CAV}}\) 只作为 world-model transition 的条件，不进入任何 value baseline，因此 \(v_t^{\mathrm{global}}\) 是 action-independent 的 network-level state value 估计，PPO advantage 的 baseline 无偏性成立。global critic 用于捕捉无法仅归因于某一辆 CAV observation 的 aggregate congestion effects；actor 的主要 advantage 由 per-vehicle critic 计算。
 
 
-The world model carries a supervised head \(\widehat T_{\mathrm{all}}(z)\)
-that predicts the completed-vehicle episode mean travel time of Definition~7
-from a latent traffic state.  The global reward is the potential difference of
-this readout along an imagined transition:
+The global reward charges each decision interval by the travel time
+accumulated by all vehicles present in the network:
 \begin{equation}
 \begin{array}{rcl}
 r_t^{\mathrm{global}}
 &=&
-\kappa_g\left(
-\widehat T_{\mathrm{all}}(z_t)
--
-\gamma\,\widehat T_{\mathrm{all}}(z_{t+1})
-\right).
+\displaystyle
+-\kappa_g\,
+\frac{N_{\mathrm{active}}(t)\,\Delta t}{N_{\mathrm{veh}}},
 \end{array}
 \end{equation}
-Here \(\kappa_g\) controls the reward scale.  With the potential
-\(\Phi(z)=-\widehat T_{\mathrm{all}}(z)\), the discounted sum of
-\(r_t^{\mathrm{global}}\) telescopes to the terminal predicted episode travel
-time, so the global signal directly tracks the episode objective instead of an
-instantaneous congestion proxy.  It complements, rather than replaces,
-simulator evaluation.
-% 中文注释：world model 带有一个 supervised head \(\widehat T_{\mathrm{all}}(z)\)，从 latent traffic state 预测 Definition~7 的 completed-vehicle episode mean travel time。global reward 是该 readout 沿 imagined transition 的 potential difference：\(r_t^{\mathrm{global}}=\kappa_g(\widehat T_{\mathrm{all}}(z_t)-\gamma\widehat T_{\mathrm{all}}(z_{t+1}))\)。取 potential \(\Phi(z)=-\widehat T_{\mathrm{all}}(z)\) 时，\(r_t^{\mathrm{global}}\) 的折扣和 telescopes 到终止状态的预测 episode travel time，因此 global signal 直接追踪 episode 目标，而不是瞬态 congestion proxy；它补充而不是替代 simulator evaluation。
+where \(N_{\mathrm{veh}}\) is the episode vehicle population and \(\kappa_g\)
+controls the reward scale.  On real transitions, \(N_{\mathrm{active}}(t)\) is
+read directly from the simulator state.  In imagined rollouts, it is computed
+from the decoded count field, \(N_{\mathrm{active}}(t)=\sum_{u\in N}\widehat
+n_{t,u}\).  Since \(\sum_t N_{\mathrm{active}}(t)\Delta t\) is the total travel
+time accumulated over an episode, the sum of \(r_t^{\mathrm{global}}\) equals
+\(-\kappa_g\) times the global mean travel time of Definition~7.  The reward
+itself is therefore computed, not learned; the global critic is trained on
+these rewards to predict the future cumulative global return and provides the
+bootstrap value at the imagination horizon.
+% 中文注释：global reward 按当前网络中所有车辆累计的通行时间对每个 decision interval 计费：\(r_t^{\mathrm{global}}=-\kappa_g N_{\mathrm{active}}(t)\Delta t/N_{\mathrm{veh}}\)。真实 transition 上 \(N_{\mathrm{active}}(t)\) 直接从 simulator 读取；imagined rollout 中用 decoded count field 求和 \(\sum_u\widehat n_{t,u}\)。由于 \(\sum_t N_{\mathrm{active}}(t)\Delta t\) 是整个 episode 累计的总通行时间，\(r_t^{\mathrm{global}}\) 的求和等于 \(-\kappa_g\) 倍的 Definition~7 global mean travel time。reward 本身是计算得到的，不需要学习；global critic 在这些 reward 上训练，预测未来累计 global return，并在 imagination horizon 末端提供 bootstrap value。
 
 The global critic is trained from the corresponding lambda return:
 \begin{equation}
