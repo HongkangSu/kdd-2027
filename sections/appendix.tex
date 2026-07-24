@@ -1,5 +1,47 @@
 \input{sections/training pipeline}
 
+\section{Experimental Settings}
+\label{app:exp-settings}
+
+\paragraph{Benchmarks.}  Table~\ref{tab:benchmarks} summarizes the three urban
+networks.  All methods use the same departure demand, candidate route
+generator (\(K=4\) candidates per decision), and incident configuration.  The
+incident speed caps are applied to all lanes of the selected edges during the
+indicated window and are removed afterwards; the decision interval is 60~s
+for all networks.
+
+\begin{table}[h]
+  \centering
+  \caption{Benchmark statistics.}
+  \renewcommand{\arraystretch}{1.0}
+  \resizebox{\columnwidth}{!}{
+    \begin{tabular}{lccc}
+      \toprule
+      & Gretz-Armainvilliers & Ingolstadt & Fontenay-en-Parisis \\
+      \midrule
+      Road segments & 4,485 & 853 & 7,585 \\
+      Scheduled vehicles & 636 & 1,035 & 2,068 \\
+      CAVs / HDVs & 254 / 382 & 414 / 621 & 827 / 1,241 \\
+      Incident edges & 1 & 1 & 7 \\
+      Incident window (s) & [500, 2500) & [500, 1500) & [300, 1800) \\
+      Speed cap (m/s) & 0.1 & 1.0 & 0.1 \\
+      \bottomrule
+    \end{tabular}
+  }
+  \label{tab:benchmarks}
+\end{table}
+
+\paragraph{Training and evaluation protocol.}  The world-model warm-up
+collects exploratory episodes in which every CAV follows an
+\(\epsilon\)-greedy routing rule (\(\epsilon=0.4\)).  The online stage runs
+150 episodes per network, saving checkpoints every 25 episodes.  Each
+checkpoint is then evaluated on 5 held-out episodes with the same masked
+stochastic route sampling used in collection; before every evaluation, the
+same simulator state and frozen HDV adaptation state are reloaded for every
+method.  Convergence is declared when the standard deviation of
+\(T_{\mathrm{all}}\) over 20 consecutive training episodes falls below 0.06.
+All runs use a single NVIDIA RTX 3090 GPU.
+
 \section{HDV Adaptation in the Simulator}
 \label{app:hdv-adaptation}
 
