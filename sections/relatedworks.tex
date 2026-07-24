@@ -22,7 +22,9 @@ traffic transitions and HDV responses from simulator experience.
 Reinforcement learning avoids a differentiable traffic model or per-decision
 equilibrium solves, and has been applied to autonomous-vehicle routing
 \cite{lazar2021learning}, Markov routing games \cite{shou2022multi}, and
-mixed-autonomy traffic flow \cite{vinitsky2023optimizing}.  Recent
+mixed-autonomy traffic flow \cite{vinitsky2023optimizing,valiente2022robustness}.
+Graph-based decentralized policies and real-time en-route suggestion schemes
+extend this line \cite{mahmoud2026decentralized,ma2024providing}.  Recent
 environments provide vehicle-executable route-choice interfaces evaluated in
 microscopic simulation
 \cite{thomasini2023routechoiceenv,akman2025routerl,akman2026urb,psarou2026optimizing},
@@ -46,11 +48,11 @@ policy visits, model-based policy optimization studies trust region and
 compounding error \cite{janner2019trust,rajeswaran2020game}, motivating
 grounding in new experience and simulator validation.  World models have also
 been extended to multi-agent and social response modeling
-\cite{mamba,chai2024aligning,liu2024efficient,zhao2026learning,zhang2026social},
+\cite{mamba,chai2024aligning,liu2024efficient,zhao2026learning,zhang2026social,shi2025gawm},
 and to autonomous driving \cite{li2024think2drive,yang2026raw2drive}, where
 they primarily address ego-centric control.  Mixed-autonomy routing instead
 couples vehicle-specific route choices with network-level dynamics and
-uncontrollable HDVs; UrbanDreamer bridges this interface by projecting route
+uncontrollable HDVs; UrbanDreamer addresses this interface by projecting route
 decisions onto the road graph and training a vehicle-executable actor through
 graph-level traffic imagination.
 % 中文注释：world model 通过学习 latent dynamics 复用经验、减少真实交互，从早期循环模型和 PlaNet 到 Dreamer 系列。想象学习的质量受限于模型在策略访问区域的精度，因此需要在原始环境中持续校准和验证。world model 也被扩展到多智能体与社会响应建模以及自动驾驶，但后者主要处理自车中心控制；UrbanDreamer 通过把选路决策投影到路网图上，用图级交通想象训练可执行的选路 actor。

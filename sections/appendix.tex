@@ -40,6 +40,13 @@ stochastic route sampling used in collection.  Convergence is declared when
 the standard deviation of \(T_{\mathrm{all}}\) over 20 consecutive training
 episodes falls below 0.06.  All runs use a single NVIDIA RTX 3090 GPU.
 
+\paragraph{Toy network.}  The scalability profile additionally includes a
+small synthetic Toy network with 24 registered road segments and the same
+decision interval and CAV penetration as the real networks.  It serves only
+as the smallest pilot point in
+Figure~\ref{fig:scalability_training_time} and is not used in any other
+experiment.
+
 \section{HDV Adaptation in the Simulator}
 \label{app:hdv-adaptation}
 

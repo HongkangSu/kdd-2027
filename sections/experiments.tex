@@ -51,11 +51,11 @@ Table~\ref{tab:computational-efficiency-archive} reports the training time each 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.8\linewidth]{figure/scalability_training_time}
-  \caption{Total Training Time across different road networks}
+  \caption{Total training time across networks of increasing size. The horizontal axis contains four discrete benchmarks ordered by road-segment count: Toy (24), Ingolstadt (853), Gretz-Armainvilliers (4,485), and Fontenay-en-Parisis (7,585). Toy is a small synthetic network used only as a pilot point in this profile. Connecting segments are visual guides rather than interpolation over a continuous scale.}
   \label{fig:scalability_training_time}
 \end{figure}
 
-Figure~\ref{fig:scalability_training_time} compares training time across road networks with increasing numbers of road segments. Training time increases for all methods as the network grows, while UrbanDreamer remains consistently faster than the baselines. Its training time increases from 5.566 hours on Ingolstadt (853 road segments) to 17.419 hours on Gretz-Armainvilliers (4,485 road segments) and 33.302 hours on Fontenay-en-Parisis (7,585 road segments), whereas the baselines require 78.2--96.1 hours on the largest network. Thus, UrbanDreamer's absolute training-time advantage becomes more pronounced as the road-network size increases.
+Figure~\ref{fig:scalability_training_time} compares training time across networks with increasing numbers of road segments, from the 24-segment synthetic Toy pilot to Fontenay-en-Parisis with 7,585 segments. Training time increases for all methods as the network grows, while UrbanDreamer remains consistently faster than the baselines. Its training time increases from 5.566 hours on Ingolstadt (853 road segments) to 17.419 hours on Gretz-Armainvilliers (4,485 road segments) and 33.302 hours on Fontenay-en-Parisis (7,585 road segments), whereas the baselines require 78.2--96.1 hours on the largest network. Thus, UrbanDreamer's absolute training-time advantage becomes more pronounced as the road-network size increases.
 
 \subsection{Final Routing Quality}
 
@@ -79,9 +79,7 @@ We conduct three groups of ablation experiments. Efficiency ablation first isola
 
 \begin{figure*}[t]
   \centering
-  \includegraphics[width=0.3\linewidth]{figure/ingolstadt_effiency_ablation.pdf}
-  \includegraphics[width=0.3\linewidth]{figure/gretz_effiency_ablation.pdf}
-  \includegraphics[width=0.3\linewidth]{figure/fontenay_effiency_ablation.pdf}
+  \includegraphics[width=0.8\linewidth]{figure/ingolstadt_effiency_ablation.pdf}
   \caption{Sample-efficiency ablation on three urban road networks. The training curves compare UrbanDreamer with Actor-Critic (No World Model) over real SUMO environment steps. Higher \(-T_{\mathrm{all}}\) indicates better routing performance.}
   \label{fig:efficiency_ablation}
 \end{figure*}
