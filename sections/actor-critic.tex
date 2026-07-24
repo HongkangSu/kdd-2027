@@ -6,7 +6,7 @@ per-vehicle critic. The actor selects a route from each CAV's local
 candidate set at execution time, while the critic jointly processes
 the active CAV observations during training and returns a separate value for
 each vehicle.  A global critic is retained as an auxiliary estimator of the
-network-level cumulative return.
+global mean travel time.
 % 中文注释：world model 推进 graph-level traffic representation \(Z_t\)，而 route actions、route progress 和 arrivals 都以 individual CAVs 为索引。若只用一个 graph-level value 概括 imagined rollout，就会丢失不同车辆在 destinations、remaining routes 和 termination times 上的差异。因此，UrbanDreamer 将 parameter-shared decentralized actor 与 centralized per-vehicle critic 结合起来。执行时，actor 从每辆 CAV 的 local candidate set 中选择 route；训练时，per-vehicle critic 联合处理 active CAV observations，并为每辆车分别输出一个 value。我们同时保留一个 global critic，作为 network-level rollout value 的辅助估计器。
 
 The global mean travel time in Definition~7 is an episode-level evaluation
