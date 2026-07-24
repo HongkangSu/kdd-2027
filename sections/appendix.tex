@@ -86,7 +86,7 @@ decision epoch, and temporal context is attended causally over a sliding
 history window of up to \(k_{\max}=8\) past traffic representations.  The
 conditions \((\Psi_t^{\mathrm{CAV}},D_t,\hat H^{\mathrm{HDV}},C_t)\) are
 encoded and injected as additional conditioning inputs.  At imagination time
-the ODE is integrated with one explicit Euler step.  \(M=|N|\) denotes the
+the ODE is integrated with \(k=4\) explicit Euler steps.  \(M=|N|\) denotes the
 number of segment nodes.
 
 \paragraph{HDV response predictor.}  The predictor is an MLP with input
@@ -106,7 +106,8 @@ speeds evolve from a single prediction rather than two independent models.
 \paragraph{Main hyperparameters.}  Imagination horizon \(L_{\mathrm{im}}=8\);
 trace parameter \(\lambda=0.95\); per-vehicle reward scale \(\kappa_r=60\);
 global reward scale \(\kappa_g=1\); global advantage weight \(\alpha_g=1.0\);
-reconstruction weight \(\lambda_{\mathrm{rec}}=0.2\); candidate routes \(K=4\);
+reconstruction weight \(\lambda_{\mathrm{rec}}=0.2\); ODE integration steps
+\(k=4\); candidate routes \(K=4\);
 episode context dimension \(3\).
 
 \paragraph{Training-time breakdown.}  Table~\ref{tab:online-wm-training-stage-time}

@@ -145,7 +145,7 @@ transition separately through the active-CAV fraction in \(c_t\).
 \subsubsection{State-to-State Flow Matching}
 
 UrbanDreamer learns the latent transition with state-to-state flow
-matching. The transition condition consists of planned CAV pressure,
+matching \cite{GiFlow}. The transition condition consists of planned CAV pressure,
 departure demand, HDV influence, and episode context:
 \begin{equation}
 \mathcal{C}_t=
@@ -199,7 +199,7 @@ degenerate focusing:
 % 中文注释：本段给出 velocity-field prediction 与加权 flow-matching 损失。残差 \(\delta_{t,\tau,u}\) 比较模型在 decision epoch \(t\)、flow time \(\tau\)、segment \(u\) 上预测的 velocity 和目标 velocity \(\nu^\star_{t,\tau,u}\)。权重 \(w_{t,u}\) 偏向有车和拥堵的 segment 并设上限防止退化聚焦；动机是绝大多数 segment 长期空闲，不加权会被自由流预测淹没。损失本身不需要模拟器 rollout。
 
 At imagination time, \(Z_{t+1}\) is unavailable, the next latent traffic representation is obtained by
-integrating the learned velocity field:
+integrating the learned velocity field with \(k\) explicit Euler steps:
 \begin{equation}
 \begin{array}{rcl}
 \hat Z_{t+1}
