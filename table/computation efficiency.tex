@@ -1,17 +1,20 @@
 \begin{table}[t]
   \centering
-  \caption{Computational efficiency on the three urban networks. All runs use a single NVIDIA RTX 3090 GPU. Lower values indicate better performance; the best value in each row is in bold.}
+  \caption{Computational efficiency on the three urban networks. All runs use a single NVIDIA RTX 3090 GPU. Lower values indicate better performance; the best value in each column is in bold.}
   \renewcommand{\arraystretch}{1.0}
   \resizebox{\columnwidth}{!}{
-    \begin{tabular}{lccccc}
+    \begin{tabular}{lccc}
       \toprule
-      & \multicolumn{5}{c}{Training time to convergence (h) $\downarrow$} \\
-      \cmidrule(lr){2-6}
-      Network & IQL & IPPO & MAPPO & MAMBA & \textbf{UrbanDreamer} \\
+      & \multicolumn{3}{c}{Training time to convergence (h) $\downarrow$} \\
+      \cmidrule(lr){2-4}
+      Method & Gretz & Ingolstadt & Fontenay \\
       \midrule
-      Gretz-Armainvilliers & 28.8 & 33.0 & 35.1 & 37.0 & \textbf{17.4} \\
-      Ingolstadt & 15.3 & 10.4 & 13.9 & 10.2 & \textbf{5.6} \\
-      Fontenay-en-Parisis & 78.2 & 96.1 & 85.6 & 78.9 & \textbf{33.3} \\
+      IQL & 28.8 & 15.3 & 78.2 \\
+      IPPO & 33.0 & 10.4 & 96.1 \\
+      MAPPO & 35.1 & 13.9 & 85.6 \\
+      MAMBA & 37.0 & 10.2 & 78.9 \\
+      \midrule
+      \textbf{UrbanDreamer} & \textbf{17.4} & \textbf{5.6} & \textbf{33.3} \\
       \bottomrule
     \end{tabular}
   }
