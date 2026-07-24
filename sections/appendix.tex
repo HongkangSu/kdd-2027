@@ -35,7 +35,7 @@ for all networks.
 collects exploratory episodes in which every CAV follows an
 \(\epsilon\)-greedy routing rule (\(\epsilon=0.4\)).  UrbanDreamer's online
 stage runs 200 episodes per network, saving checkpoints every 25 episodes,
-while the model-free baselines are trained for 500 episodes under the same
+while the baselines are trained for 500 episodes under the same
 protocol.  Each checkpoint is then evaluated on 5 held-out episodes with the
 same masked stochastic route sampling used in collection.  Convergence is
 declared when the standard deviation of \(T_{\mathrm{all}}\) over 20
