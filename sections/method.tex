@@ -30,64 +30,41 @@ active CAV and HDV fractions.
 % 中文注释：基于这些 observations，UrbanDreamer 将 MDP transition 映射为一个 latent prediction problem：\(Z_t=f_\phi(X_t,G)\)，\(\Psi_t^{\mathrm{CAV}}=\Pi_G(\mathbf a_t,\mathcal{I}_t)\)，并由 \(F_\phi\) 在 \(\Psi_t^{\mathrm{CAV}}\)、\(D_t\)、\(H_t^{\mathrm{HDV}}\) 和 episode context \(c_t\) 的条件下预测 \(\hat Z_{t+1}\)。其中 \(\mathbf a_t\) 是 active CAVs 实际执行的 joint route action，\(c_t\) 包含归一化决策时间和 active CAV/HDV 比例。learned transition 不是新的 problem definition，而是 policy learning 中使用的 MDP transition surrogate。
 
 
-The rest of the method introduces the main modules of UrbanDreamer. The
-Flow Matching Dynamics Model learns the transition \(F_\phi\) over the latent space. The HDV Response Module estimates the uncontrollable human-driven
-traffic influence \(H_t^{\mathrm{HDV}}\).  The Actor-Critic Learner
-optimizes the CAV route actor \(\pi_\theta\) using imagined rollouts and long-horizon value signals. Finally, we will explain the Training Pipeline of this system.
+The rest of the method presents the Flow Matching Dynamics Model that learns
+\(F_\phi\), the HDV Response Module that estimates \(H_t^{\mathrm{HDV}}\),
+and the Actor-Critic Learner that optimizes \(\pi_\theta\) in imagined
+rollouts; the training pipeline is given in
+Appendix~\ref{app:training-pipeline}.
 % 中文注释：method 的其余部分直接来自这一映射。flow-matching-based segment world model 在 segment-node latents 上学习 \(p_\phi\)。HDV response module 估计不可控的 human-driven traffic context \(H_t^{\mathrm{HDV}}\)。two-level actor-critic learner 使用 imagined rollouts 和 centralized value signals 优化 CAV route actor \(\pi_\theta\)。最后，simulator evaluation 选择 actor checkpoints，因此 policy improvement 仍然绑定在真实 MDP 上，而不是只绑定在 imagined returns 上。
 
 \subsection{Flow Matching Dynamics Model}
 
-UrbanDreamer builds the dynamics transition with four components: A GNN encoder compresses the segment traffic
-field \(X_t\) into a latent representation \(Z_t\). A decoder grounds the
-latent representation in traffic attributes, which later supply
-rewards and value targets for imagined rollouts. An action encoder
-aggregates vehicle-level route decisions into graph-level planned
-pressure. And a flow-matching model predicts latent transitions.
 % 中文注释：本段是 3.2 的路线图段：先声明设计逻辑——想象训练的质量受限于 transition 的质量，然后按 encoder→conditioning→flow-matching transition→readouts 的顺序给出组件地图，并与 Overview 中的 \(F_\phi\) 记号衔接。写作功能是让读者在进入公式前掌握世界模型的整体结构。
 
 
-\subsubsection{GNN Traffic Encoder}
+\subsubsection{Traffic Encoder and Decoder}
 
-Given the traffic field \(X_t\) and the adjacency matrix \(A\) of the road
-graph, a stack of graph convolution layers with residual connections and layer
-normalization (Appendix~\ref{app:math-details})
-produces the latent traffic representation \(Z_t\).
-Each row \(z_{t,u}=Z_t(u)\) summarizes road segment \(u\) together with its
-graph neighborhood. 
-% 中文注释：本段先给出设计目的（拥堵传播天然发生在路网图上，所以编码器要在 segment-node graph 上做消息传递），再给出 GNN 编码公式。\(z_{t,u}\) 概括了 segment \(u\) 及其邻域。写作功能：先讲 why 再讲 what，避免读者把编码器当成任意的实现选择。
-
-\subsubsection{Reconstruction Decoder}
-
-Let \(x^{\mathrm{dyn}}_{t,u}\) denote the dynamically observed vector of segment
-\(u\), containing occupancy \(c_{t,u}\) and normalized speed \(v_{t,u}\). UrbanDreamer decodes these attributes from \(Z_t\) with SiLU activation followed by separate linear channel heads:
-\begin{equation}
-\begin{array}{rcl}
-\hat x^{\mathrm{dyn}}_{t,u}
-=
-[\hat c_{t,u},\hat v_{t,u}] =
-h_\rho^x(\mathrm{SiLU}(W_d z_{t,u})).
-\end{array}
-\end{equation}
-
-The decoder is trained jointly with the dynamics model with a reconstruction
-loss on observed traffic fields (Appendix~\ref{app:math-details}).
-In actor-critic learning, the decoder is also used to calculate route-level episode rewards and value targets.
-% 中文注释：只有当 control 所需的 traffic quantities 可以从 latent representation 中重构出来时，该 representation 才能支持 policy learning。令 \(x^{\mathrm{dyn}}_{t,u}\) 表示 segment \(u\) 的动态观测向量，包括 occupancy、normalized speed、vehicle count 和 halting count。UrbanDreamer 通过 shared affine map 和 SiLU activation，再接独立的 linear channel heads，从 \(Z_t\) 中解码这些量。volume channel 在作为物理非负 volume 使用前会经过 softplus 映射。decoded speed 和 volume 随后提供 imagined rewards 与 route-cost features 使用的 travel-time readouts。decoder 通过 observed traffic fields 上的 reconstruction loss \(\mathcal{L}_{\mathrm{dec}}\) 训练；在 online world-model training 中，同一个 decoder 也用于监督 flow-matching transition 之后预测出的 next-step latents。这个 autoencoding constraint 防止 latent traffic representation 丢弃后续 imagined rollouts 中计算 rewards、route-cost features 和 value targets 所需的 observable traffic variables。
+Given the traffic field \(X_t\), a stack of graph convolution layers with
+residual connections and layer normalization produces the latent traffic
+representation \(Z_t\), whose row \(z_{t,u}\) summarizes segment \(u\)
+together with its graph neighborhood (Appendix~\ref{app:math-details}).  A
+decoder maps each \(z_{t,u}\) back to the dynamic segment attributes
+\([\hat c_{t,u},\hat v_{t,u}]\) and is trained jointly with the dynamics
+model with a reconstruction loss on observed traffic fields
+(Appendix~\ref{app:math-details}).  In actor-critic learning, the decoder
+also provides the travel-time and count readouts for rewards and value
+targets.
+% 中文注释：encoder 用带残差和 layer normalization 的 GCN 层把 traffic field \(X_t\) 编码为 \(Z_t\)(\(z_{t,u}\) 概括 segment \(u\) 及其邻域）;decoder 把 \(z_{t,u}\) 解码回动态属性 \([\hat c_{t,u},\hat v_{t,u}]\),与 dynamics model 联合训练（公式均在附录）。actor-critic 中 decoder 还提供 reward 和 value target 所需的 travel-time 和 count readouts。
 
 
 \subsubsection{Action Encoder}
 
-The transition model evolves graph-level traffic representations \(Z_t\), but
-decisions are made at the vehicle level: each active CAV
-selects one candidate route from its local observation. So we construct
-an action representation to connect the vehicle-level route decisions and graph-level traffic transitions. 
-
-
-We project the realized one-hot CAV route decisions onto the segment
-nodes that those routes are expected to visit. The result is a graph-level
-planned pressure field \(\Psi_t^{\mathrm{CAV}}\), defined on the
-same road segment set as \(X_t\) and \(Z_t\).
+The transition model evolves graph-level representations, but decisions are
+made at the vehicle level.  We therefore project the realized one-hot CAV
+route decisions onto the segment nodes that those routes are expected to
+visit, producing a graph-level planned pressure field
+\(\Psi_t^{\mathrm{CAV}}\) defined on the same segment set as \(X_t\) and
+\(Z_t\).
 % 中文注释：transition model 推进的是 graph-level traffic representations \(Z_t\)，但可控决策发生在 vehicle level：每个 active CAV 根据自己的 local observation 选择一条 candidate route。因此，UrbanDreamer 需要一个 action representation，将 vehicle-level route decisions 和 graph-level traffic transitions 放到同一个坐标系统中。我们通过把 CAV route probabilities 投影到这些 routes 预计会经过的 segment nodes 上来构造该表示。得到的结果是在与 \(X_t\) 和 \(Z_t\) 相同的 segment-node set 上定义的 graph-level planned pressure field \(A_t^{\mathrm{CAV}}\in\mathbb{R}^M\)。这使 CAV action 能够被 world model 使用，同时不替换 individual vehicles 在执行时使用的 route-choice interface。
 For active CAV \(i\), let \(\mathrm{Seg}_{\Delta}(P^k_{i,t})\subseteq
 N\)

@@ -152,8 +152,18 @@ H^\ell+\sigma(AH^\ell W_m+H^\ell W_s)
 where \(W_x,W_m,W_s\) are learned projections, \(\sigma\) is a nonlinear
 activation, and \(\mathrm{LN}\) denotes layer normalization.
 
-\paragraph{Decoder reconstruction loss.}  The decoder is trained jointly with
-the dynamics model with a reconstruction loss on observed traffic fields:
+\paragraph{Decoder and reconstruction loss.}  The decoder maps each segment
+latent to the dynamic attributes with a SiLU block and linear channel heads:
+\begin{equation}
+\begin{array}{rcl}
+\hat x^{\mathrm{dyn}}_{t,u}
+=
+[\hat c_{t,u},\hat v_{t,u}] =
+h_\rho^x(\mathrm{SiLU}(W_d z_{t,u})).
+\end{array}
+\end{equation}
+It is trained jointly with the dynamics model with a reconstruction loss on
+observed traffic fields:
 \begin{equation}
 \begin{array}{rcl}
 \mathcal{L}_{\mathrm{rec}}
