@@ -94,7 +94,7 @@ We compare UrbanDreamer with four variants to assess the contribution of each co
 
 \input{table/ablation performance}
 
-Table~\ref{tab:ablation performance} shows that UrbanDreamer achieves the lowest \(T_{\mathrm{all}}\) and \(T_{\mathrm{CAV}}\) on all three networks, and every ablated variant increases \(T_{\mathrm{all}}\). Removing world-model imagination (Actor-Critic) causes the largest degradation on Ingolstadt and Fontenay-en-Parisis, while removing the HDV response module is most harmful on Gretz-Armainvilliers. UrbanDreamer also incurs the lowest added cost \(C_{\mathrm{ALL}}\) on all three networks, and replacing flow matching with MSE regression degrades both routing performance and prediction quality (Table~\ref{tab:wm-prediction-ablation}).
+Table~\ref{tab:ablation performance} shows that removing any component degrades routing performance on all three networks. Removing world-model imagination (Actor-Critic) causes the largest degradation on Ingolstadt and Fontenay-en-Parisis, while removing the HDV response module is most harmful on Gretz-Armainvilliers. Replacing flow matching with MSE regression also degrades both routing performance and prediction quality (Table~\ref{tab:wm-prediction-ablation}).
 
 \subsubsection{Transition Ablation}
 
