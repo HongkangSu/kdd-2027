@@ -324,9 +324,10 @@ n_{t,u}\).  Since \(\sum_t N_{\mathrm{active}}(t)\Delta t\) is the total travel
 time accumulated over an episode, the sum of \(r_t^{\mathrm{global}}\) equals
 \(-\kappa_g\) times the global mean travel time of Definition~7.  The reward
 itself is therefore computed, not learned; the global critic is trained on
-these rewards to predict the future cumulative global return and provides the
+these rewards to predict the future cumulative global return, which coincides
+with the global mean travel time over the remaining episode, and provides the
 bootstrap value at the imagination horizon.
-% 中文注释：global reward 按当前网络中所有车辆累计的通行时间对每个 decision interval 计费：\(r_t^{\mathrm{global}}=-\kappa_g N_{\mathrm{active}}(t)\Delta t/N_{\mathrm{veh}}\)。真实 transition 上 \(N_{\mathrm{active}}(t)\) 直接从 simulator 读取；imagined rollout 中用 decoded count field 求和 \(\sum_u\widehat n_{t,u}\)。由于 \(\sum_t N_{\mathrm{active}}(t)\Delta t\) 是整个 episode 累计的总通行时间，\(r_t^{\mathrm{global}}\) 的求和等于 \(-\kappa_g\) 倍的 Definition~7 global mean travel time。reward 本身是计算得到的，不需要学习；global critic 在这些 reward 上训练，预测未来累计 global return，并在 imagination horizon 末端提供 bootstrap value。
+% 中文注释：global reward 按当前网络中所有车辆累计的通行时间对每个 decision interval 计费：\(r_t^{\mathrm{global}}=-\kappa_g N_{\mathrm{active}}(t)\Delta t/N_{\mathrm{veh}}\)。真实 transition 上 \(N_{\mathrm{active}}(t)\) 直接从 simulator 读取；imagined rollout 中用 decoded count field 求和 \(\sum_u\widehat n_{t,u}\)。由于 \(\sum_t N_{\mathrm{active}}(t)\Delta t\) 是整个 episode 累计的总通行时间，\(r_t^{\mathrm{global}}\) 的求和等于 \(-\kappa_g\) 倍的 Definition~7 global mean travel time。reward 本身是计算得到的，不需要学习；global critic 在这些 reward 上训练，预测未来累计 global return（与剩余 episode 的 global mean travel time 一致），并在 imagination horizon 末端提供 bootstrap value。
 
 The global critic is trained from the corresponding lambda return:
 \begin{equation}
