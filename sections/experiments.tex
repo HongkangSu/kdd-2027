@@ -88,13 +88,13 @@ We compare UrbanDreamer with Actor-Critic (No World Model) to isolate the effect
 
 \subsubsection{Component Ablation}
 
-We compare UrbanDreamer with five variants to assess the contribution of each component to routing performance. Actor-Critic removes world-model imagination, w/o HDV Response removes HDV influence prediction, Vehicle Critic Only and Global Critic Only retain a single critic, and MSE Transition replaces flow matching with deterministic next-state regression.
+We compare UrbanDreamer with four variants to assess the contribution of each component to routing performance. Actor-Critic removes world-model imagination, w/o HDV Response removes HDV influence prediction, Vehicle Critic Only retains only the per-vehicle critic, and MSE Transition replaces flow matching with deterministic next-state regression.
 
 
 
 \input{table/ablation performance}
 
-Table~\ref{tab:ablation performance} shows that UrbanDreamer achieves the lowest \(T_{\mathrm{all}}\) and \(T_{\mathrm{CAV}}\) on all three networks. Every ablated variant increases \(T_{\mathrm{all}}\), with Global Critic Only causing the largest degradation, highlighting the importance of vehicle-level learning signals. Replacing flow matching with MSE regression also yields higher \(T_{\mathrm{all}}\) on all three networks.
+Table~\ref{tab:ablation performance} shows that UrbanDreamer achieves the lowest \(T_{\mathrm{all}}\) and \(T_{\mathrm{CAV}}\) on all three networks, and every ablated variant increases \(T_{\mathrm{all}}\). Removing world-model imagination (Actor-Critic) causes the largest degradation on Ingolstadt and Fontenay-en-Parisis, while removing the HDV response module is most harmful on Gretz-Armainvilliers. UrbanDreamer also incurs the lowest added cost \(C_{\mathrm{ALL}}\) on all three networks, and replacing flow matching with MSE regression degrades both routing performance and prediction quality (Table~\ref{tab:wm-prediction-ablation}).
 
 \subsubsection{Transition Ablation}
 
