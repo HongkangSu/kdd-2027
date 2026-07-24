@@ -154,28 +154,40 @@ world-model updates and imagination together cost less than the initial fit.
 
 \section{Case Study and Visualization}
 
-Finally, we visualize the learned world model on the three urban networks.
-The case study aligns selected-route shares, planned
-CAV pressure, segment speed, vehicle count, and queue development at the same
-decision epochs.
+Figures~\ref{fig:ingolstadt-construction}, \ref{fig:gretz-construction}, and
+\ref{fig:fontenay-construction} visualize multi-step rollouts of the learned
+world model on the three networks.  Each figure starts from an observed
+traffic state and rolls the transition model forward autoregressively.  The
+five columns show horizons \(h=0\) to \(h=4\), where \(h=0\) is the
+same-state reconstruction and each further step advances the traffic state by
+one 60-second decision interval.  The two rows compare the simulator-observed
+segment speeds with the speeds decoded from the predicted latent state, using
+a common color scale.
+
+Across the three networks, the predicted maps reproduce the observed spatial
+congestion pattern: slow segments concentrate around the incident edges and
+their upstream feeders, and queues grow and dissipate over the horizon in the
+same regions as in the simulator.  Deviations appear mainly as smoothed speed
+estimates on low-occupancy segments at later horizons, which is consistent
+with the per-segment weighting of the flow-matching loss.
 
 \begin{figure}
     \centering
     \includegraphics[width=0.75\linewidth]{figure/ingolstadt_construction.pdf}
-    \caption{World Model Construction in Ingolstadt}
+    \caption{World-model rollout reconstruction on Ingolstadt. Top: simulator-observed segment speeds. Bottom: speeds decoded from the predicted latent state. Columns: prediction horizons \(h=0\) to \(h=4\).}
     \label{fig:ingolstadt-construction}
 \end{figure}
 
 \begin{figure}
     \centering
     \includegraphics[width=0.75\linewidth]{figure/gretz_construction.pdf}
-    \caption{World Model Construction in Gretz-Armainvilliers}
+    \caption{World-model rollout reconstruction on Gretz-Armainvilliers, in the same layout as Figure~\ref{fig:ingolstadt-construction}.}
     \label{fig:gretz-construction}
 \end{figure}
 
 \begin{figure}
     \centering
     \includegraphics[width=0.75\linewidth]{figure/fontenay_construction.pdf}
-    \caption{World Model Construction in Fontenay-en-Parisis}
+    \caption{World-model rollout reconstruction on Fontenay-en-Parisis, in the same layout as Figure~\ref{fig:ingolstadt-construction}.}
     \label{fig:fontenay-construction}
 \end{figure}
