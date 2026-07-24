@@ -59,11 +59,11 @@ Figure~\ref{fig:scalability_training_time} compares training time across road ne
 
 \subsection{Final Routing Quality}
 
-Table~\ref{tab:overall-performance} reports the mean travel times of all vehicles, CAVs, and HDVs on the three urban networks. All travel times are measured in minutes, and lower values indicate better performance.
+Table~\ref{tab:overall-performance} reports the mean travel times of all vehicles, CAVs, and HDVs on the three urban networks, together with the 95th-percentile travel time \(T_{\mathrm{P95}}\), by which 95\% of the vehicles have arrived. All travel times are measured in minutes, and lower values indicate better performance.
 
 \input{table/overall performance}
 
-UrbanDreamer attains the lowest global mean travel time on Gretz-Armainvilliers and Fontenay-en-Parisis. On Ingolstadt it is second to live-current greedy by 0.01 minutes and lowest among the learning-based methods. The gains come primarily from lower CAV travel times, while \(T_{\mathrm{HDV}}\) stays close to the best value on each network.
+UrbanDreamer attains the lowest global mean travel time on Gretz-Armainvilliers and Fontenay-en-Parisis. On Ingolstadt it is second to live-current greedy by 0.01 minutes and lowest among the learning-based methods. The gains come primarily from lower CAV travel times, while \(T_{\mathrm{HDV}}\) stays close to the best value on each network. Its 95th-percentile travel time is the lowest on Gretz-Armainvilliers and the second lowest on Ingolstadt and Fontenay-en-Parisis, indicating that the policy does not introduce extreme delays for the slowest vehicles.
 
 % 中文注释：UrbanDreamer 在 Gretz-Armainvilliers 上的三个完成率有效通行时间指标中均取得最佳结果。它的 \(t_{\mathrm{all}}\) 分别比 free-flow greedy 和 live-current greedy 低 0.7076 分钟和 0.5761 分钟，对应 14.68\% 和 12.28\% 的下降。MAPPO 在该网络上的完成率只有 89.62\%，因此不参与通行时间排名。
 
