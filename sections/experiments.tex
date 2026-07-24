@@ -15,7 +15,7 @@ We compare UrbanDreamer with two heuristic methods and four MARL methods. Free-f
 
 \subsubsection{Evaluation Metrics}
 
-All methods are evaluated using the same route candidates, traffic demand, disruption settings, simulation horizon, and initial HDV state. The simulation horizon is set long enough for every vehicle to reach its destination before the episode ends. We use the global mean travel time \(T_{\mathrm{all}}\) as the primary metric and additionally report the mean travel times of CAVs and HDVs, denoted by \(T_{\mathrm{CAV}}\) and \(T_{\mathrm{HDV}}\), respectively.
+All methods are evaluated using the same route candidates, traffic demand, disruption settings, simulation horizon, and initial HDV state. The simulation horizon is set long enough for every vehicle to reach its destination before the episode ends. We use the global mean travel time \(T_{\mathrm{all}}\) as the primary metric and additionally report the CAV mean travel time \(T_{\mathrm{CAV}}\), the added cost \(C_{\mathrm{ALL}}\) relative to the pre-CAV reference state, and the 95th-percentile travel time \(T_{\mathrm{P95}}\).
 
 
 \subsection{Efficiency and Scalability}
@@ -59,11 +59,11 @@ Figure~\ref{fig:scalability_training_time} compares training time across road ne
 
 \subsection{Final Routing Quality}
 
-Table~\ref{tab:overall-performance} reports the mean travel times of all vehicles, CAVs, and HDVs on the three urban networks, together with the 95th-percentile travel time \(T_{\mathrm{P95}}\), by which 95\% of the vehicles have arrived. All travel times are measured in minutes, and lower values indicate better performance.
+Table~\ref{tab:overall-performance} reports the mean travel times of all vehicles and CAVs on the three urban networks, the added cost \(C_{\mathrm{ALL}}\) relative to the pre-CAV reference state, and the 95th-percentile travel time \(T_{\mathrm{P95}}\), by which 95\% of the vehicles have arrived. All travel times are measured in minutes, and lower values indicate better performance.
 
 \input{table/overall performance}
 
-UrbanDreamer attains the lowest global mean travel time on Gretz-Armainvilliers and Fontenay-en-Parisis. On Ingolstadt it is second to live-current greedy by 0.01 minutes and lowest among the learning-based methods. The gains come primarily from lower CAV travel times, while \(T_{\mathrm{HDV}}\) stays close to the best value on each network.
+UrbanDreamer attains the lowest global mean travel time on Gretz-Armainvilliers and Fontenay-en-Parisis. On Ingolstadt it is second to live-current greedy by 0.01 minutes and lowest among the learning-based methods. The gains come primarily from lower CAV travel times, and UrbanDreamer also incurs the lowest added cost \(C_{\mathrm{ALL}}\) on all three networks.
 
 % 中文注释：UrbanDreamer 在 Gretz-Armainvilliers 上的三个完成率有效通行时间指标中均取得最佳结果。它的 \(t_{\mathrm{all}}\) 分别比 free-flow greedy 和 live-current greedy 低 0.7076 分钟和 0.5761 分钟，对应 14.68\% 和 12.28\% 的下降。MAPPO 在该网络上的完成率只有 89.62\%，因此不参与通行时间排名。
 

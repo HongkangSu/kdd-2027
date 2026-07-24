@@ -1,21 +1,21 @@
 \begin{table*}[t]
   \centering
-  \caption{Final routing quality on the three urban networks: mean travel times in minutes for all vehicles, CAVs, and HDVs, and the 95th-percentile travel time \(T_{\mathrm{P95}}\). Lower values indicate better performance; the best value in each column is in bold.}
+  \caption{Final routing quality on the three urban networks: mean travel times in minutes for all vehicles and CAVs, the added cost \(C_{\mathrm{ALL}}\) in minutes (mean additional travel time relative to the pre-CAV reference state, measured during training and therefore not applicable to the training-free heuristics), and the 95th-percentile travel time \(T_{\mathrm{P95}}\). Lower values indicate better performance; the best value in each column is in bold.}
   \renewcommand{\arraystretch}{1.0}
   \resizebox{1.0\linewidth}{!}{
     \begin{tabular}{lcccccccccccc}
       \toprule
       \multirow{2}{*}{Method} & \multicolumn{4}{c}{Gretz-Armainvilliers} & \multicolumn{4}{c}{Ingolstadt} & \multicolumn{4}{c}{Fontenay-en-Parisis} \\
       \cmidrule(lr){2-5} \cmidrule(lr){6-9} \cmidrule(lr){10-13}
-      & $T_{\mathrm{all}}\!\downarrow$ & $T_{\mathrm{CAV}}\!\downarrow$ & $T_{\mathrm{HDV}}\!\downarrow$ & $T_{\mathrm{P95}}\!\downarrow$ & $T_{\mathrm{all}}\!\downarrow$ & $T_{\mathrm{CAV}}\!\downarrow$ & $T_{\mathrm{HDV}}\!\downarrow$ & $T_{\mathrm{P95}}\!\downarrow$ & $T_{\mathrm{all}}\!\downarrow$ & $T_{\mathrm{CAV}}\!\downarrow$ & $T_{\mathrm{HDV}}\!\downarrow$ & $T_{\mathrm{P95}}\!\downarrow$\\
+      & $T_{\mathrm{ALL}}\!\downarrow$ & $T_{\mathrm{CAV}}\!\downarrow$ & $C_{\mathrm{ALL}}\!\downarrow$ & $T_{\mathrm{P95}}\!\downarrow$ & $T_{\mathrm{ALL}}\!\downarrow$ & $T_{\mathrm{CAV}}\!\downarrow$ & $C_{\mathrm{ALL}}\!\downarrow$ & $T_{\mathrm{P95}}\!\downarrow$ & $T_{\mathrm{ALL}}\!\downarrow$ & $T_{\mathrm{CAV}}\!\downarrow$ & $C_{\mathrm{ALL}}\!\downarrow$ & $T_{\mathrm{P95}}\!\downarrow$\\
       \midrule
-      Free-flow greedy & 3.262 & 3.537 & 3.079 & 6.667 & 4.542 & 4.590 & 4.509 & 7.333 & 4.682 & 4.676 & 4.687 & 22.651\\
-      Live-current greedy & 3.331 & 3.710 & 3.079 & 6.950 & \textbf{4.410} & 4.375 & \textbf{4.433} & \textbf{6.616} & 4.691 & 4.693 & 4.690 & 22.636\\
-      IQL & 3.321 & 3.687 & 3.078 & 6.867 & 4.595 & 4.785 & 4.468 & 7.416 & 4.968 & 5.552 & 4.577 & \textbf{20.947}\\
-      IPPO & 3.933 & 5.169 & 3.111 & 10.569 & 5.679 & 7.532 & 4.443 & 14.693 & 5.438 & 6.611 & 4.657 & 25.171\\
-      MAPPO & 3.246 & 3.538 & \textbf{3.050} & 6.617 & 4.664 & 4.867 & 4.528 & 7.533 & 4.838 & 5.245 & 4.566 & 22.928\\
-      MAMBA & 3.353 & 3.725 & 3.106 & 6.867 & 4.555 & 4.519 & 4.578 & 7.016 & 5.068 & 5.821 & 4.566 & 23.233\\
-      \textbf{UrbanDreamer} & \textbf{3.167} & \textbf{3.297} & 3.081 & \textbf{6.583} & 4.421 & \textbf{4.370} & 4.454 & 6.883 & \textbf{4.600} & \textbf{4.665} & \textbf{4.556} & 22.285\\
+      Free-flow greedy & 3.262 & 3.537 & N/A & 6.667 & 4.542 & 4.590 & N/A & 7.333 & 4.682 & 4.676 & N/A & 22.651\\
+      Live-current greedy & 3.331 & 3.710 & N/A & 6.950 & \textbf{4.410} & 4.375 & N/A & \textbf{6.616} & 4.691 & 4.693 & N/A & 22.636\\
+      IQL & 3.321 & 3.687 & 0.641 & 6.867 & 4.595 & 4.785 & 0.750 & 7.416 & 4.968 & 5.552 & 0.185 & \textbf{20.947}\\
+      IPPO & 3.933 & 5.169 & 1.077 & 10.569 & 5.679 & 7.532 & 1.994 & 14.693 & 5.438 & 6.611 & 0.704 & 25.171\\
+      MAPPO & 3.246 & 3.538 & 0.367 & 6.617 & 4.664 & 4.867 & 0.443 & 7.533 & 4.838 & 5.245 & -0.048 & 22.928\\
+      MAMBA & 3.353 & 3.725 & 0.826 & 6.867 & 4.555 & 4.519 & 1.063 & 7.016 & 5.068 & 5.821 & 0.735 & 23.233\\
+      \textbf{UrbanDreamer} & \textbf{3.167} & \textbf{3.297} & \textbf{0.230} & \textbf{6.583} & 4.421 & \textbf{4.370} & \textbf{0.146} & 6.883 & \textbf{4.600} & \textbf{4.665} & \textbf{-0.295} & 22.285\\
       \bottomrule
     \end{tabular}
   }
