@@ -60,54 +60,17 @@ samples, rewards, and per-vehicle bootstrap values.
 
 \subsubsection{Parameter-Shared CAV Route Actor}
 
-The segment latent \(z_{t,u}\) contains the traffic attributes used to evaluate
-candidate routes.  Because a candidate can contain a variable number of road
-segments, UrbanDreamer converts its segment latents into a fixed-dimensional
-representation by mean pooling:
-\begin{equation}
-\begin{array}{rcl}
-\varphi_{i,t,k}
-&=&
-\displaystyle
-\frac{1}{|P^k_{i,t}|}
-\sum_{u\in P^k_{i,t}}z_{t,u}.
-\end{array}
-\end{equation}
+The actor scores every candidate route from a fixed-dimensional route
+representation \(\varphi_{i,t,k}\), obtained by mean pooling the segment
+latents along the route, and a shared context \(g_t\) containing the pooled
+graph latent, the normalized decision time, and the active-CAV fraction
+(Appendix~\ref{app:math-details}).
 % 中文注释：segment latent \(z_{t,u}\) 包含用于评价 candidate routes 的 traffic attributes。由于一条 candidate route 可以包含数量可变的 road segments，UrbanDreamer 通过 mean pooling 将其 segment latents 转换为 fixed-dimensional representation：\(\varphi_{i,t,k}=|P^k_{i,t}|^{-1}\sum_{u\in P^k_{i,t}}z_{t,u}\)。
 
-The context shared by all active CAVs summarizes the graph and decision
-progress:
-\begin{equation}
-\begin{array}{rcl}
-\bar z_t
-&=&
-\displaystyle
-\frac{1}{|N|}\sum_{u\in N}z_{t,u},\\[0.35em]
-g_t
-&=&
-\displaystyle
-\left[
-\bar z_t,
-\frac{t}{T},
-\frac{|\mathcal{I}_t|}{|N^{\mathrm{CAV}}|}
-\right].
-\end{array}
-\end{equation}
-The vectorized realization of the observation operator is therefore
-\begin{equation}
-o_{i,t}
-=
-\big[
-\varphi_{i,t,1}\Vert\cdots\Vert
-\varphi_{i,t,K}\Vert g_t
-\big],
-\end{equation}
-where \(|N^{\mathrm{CAV}}|\) is the number of CAVs scheduled in the episode and
-\(\Vert\) denotes concatenation.
 % 中文注释：所有 active CAVs 共享的 context 概括 graph 和 decision progress：\(\bar z_t=|N|^{-1}\sum_{u\in N}z_{t,u}\)，\(g_t=[\bar z_t,t/T,|\mathcal{I}_t|/|N^{\mathrm{CAV}}|]\)。这里，\(|N^{\mathrm{CAV}}|\) 是 episode 中 scheduled CAVs 的数量。因此，observation operator 的 vectorized realization 为 \(o_{i,t}=[\varphi_{i,t,1}\Vert\cdots\Vert\varphi_{i,t,K}\Vert g_t]\)，其中 \(\Vert\) 表示 concatenation。
 
 The learned policy must select one executable route at deployment.  UrbanDreamer
-applies the parameter-shared actor to every CAV and every candidate, and
+applies the parameter-shared scorer to every CAV and every candidate, and
 normalizes the route scores into a categorical distribution over the valid
 candidates:
 \begin{equation}
@@ -130,8 +93,8 @@ For policy optimization, let \(\pi_{\mathrm{old}}\) denote the behavior policy
 that produced \(a_{i,t}\).  The per-vehicle and global critics introduced below
 provide the value estimates \(v_{i,t}^{\mathrm{veh}}\) and
 \(v_t^{\mathrm{global}}\), together with their corresponding return targets
-\(G_{i,t}^{\lambda}\) and \(G_t^{\mathrm{global}}\).  The detached advantages,
-their actor combination, and its standardized clipped form are
+\(G_{i,t}^{\lambda}\) and \(G_t^{\mathrm{global}}\).  The detached advantages
+and their actor combination are
 \begin{equation}
 \begin{array}{rcl}
 A_{i,t}^{\mathrm{veh}}
@@ -146,65 +109,19 @@ G_t^{\mathrm{global}}-v_t^{\mathrm{global}}
 \right),\\
 A_{i,t}^{\mathrm{actor}}
 &=&
-A_{i,t}^{\mathrm{veh}}+\alpha_g A_t^{\mathrm{global}},\\
-\bar A_{i,t}^{\mathrm{actor}}
-&=&
-\displaystyle
-\mathrm{clip}\!\left(
-\frac{A_{i,t}^{\mathrm{actor}}-\mu_A}{\sigma_A+\varepsilon_A},-c,c
-\right).
+A_{i,t}^{\mathrm{veh}}+\alpha_g A_t^{\mathrm{global}}.
 \end{array}
 \end{equation}
-The current-to-behavior probability ratio and its clipped counterpart are
-\begin{equation}
-\begin{array}{rcl}
-\rho_{i,t}
-&=&
-\displaystyle
-\frac{\pi_\theta(a_{i,t}\mid o_{i,t})}
-{\pi_{\mathrm{old}}(a_{i,t}\mid o_{i,t})},\\[0.35em]
-\bar\rho_{i,t}
-&=&
-\mathrm{clip}(\rho_{i,t},1-\epsilon,1+\epsilon).
-\end{array}
-\end{equation}
-Here \(\mu_A\) and \(\sigma_A\) are minibatch statistics,
-\(\varepsilon_A>0\) stabilizes normalization, and \(c\) and \(\epsilon\) are
-the advantage and probability-ratio clipping thresholds.  Moreover,
-\(\mathrm{sg}\) stops gradients through the return targets, and \(\alpha_g\)
-weights the global credit.  The global term is shared by CAV actions from the
-same imagined epoch, so policy improvement internalizes network-wide congestion
-while retaining vehicle-specific credit.
+Here \(\mathrm{sg}\) stops gradients through the return targets, and
+\(\alpha_g\) weights the global credit shared by CAV actions from the same
+imagined epoch, so policy improvement internalizes network-wide congestion
+while retaining vehicle-specific credit.  The actor is optimized with the
+standard clipped PPO surrogate with entropy regularization
+(Appendix~\ref{app:math-details}).
 % 中文注释：在 policy optimization 中，令 \(\pi_{\mathrm{old}}\) 表示产生 \(a_{i,t}\) 的 behavior policy。下文的 per-vehicle critic 和 global critic 分别提供 value estimates \(v_{i,t}^{\mathrm{veh}}\)、\(v_t^{\mathrm{global}}\) 及其 return targets \(G_{i,t}^{\lambda}\)、\(G_t^{\mathrm{global}}\)。vehicle advantage 与 global advantage 分别为 \(A_{i,t}^{\mathrm{veh}}=\mathrm{sg}(G_{i,t}^{\lambda}-v_{i,t}^{\mathrm{veh}})\) 和 \(A_t^{\mathrm{global}}=\mathrm{sg}(G_t^{\mathrm{global}}-v_t^{\mathrm{global}})\)。actor 使用 \(A_{i,t}^{\mathrm{actor}}=A_{i,t}^{\mathrm{veh}}+\alpha_gA_t^{\mathrm{global}}\)，并在组合后统一标准化和裁剪。这里，\(\mu_A\) 和 \(\sigma_A\) 是 minibatch statistics，\(\varepsilon_A\) 用于稳定 normalization，\(c\) 和 \(\epsilon\) 分别是 advantage 和 probability-ratio clipping thresholds，\(\mathrm{sg}\) 阻断 return targets 上的梯度，\(\alpha_g\) 控制 global credit 的权重。同一 imagined epoch 的 active CAVs 共享 global term，因此 policy update 同时保留 vehicle-specific credit 并纳入 network-wide congestion credit。
 
-The actor minimizes the clipped discrete surrogate, where
-\(\mathbb{E}_{i,t}\) averages over active CAV decisions in the imagined
-minibatch:
-\begin{equation}
-\begin{array}{rcl}
-\mathcal{L}_{\pi}
-&=&
--\mathbb{E}_{i,t}
-\left[
-\min\!\left(
-\rho_{i,t}\bar A_{i,t}^{\mathrm{actor}},
-\bar\rho_{i,t}\bar A_{i,t}^{\mathrm{actor}}
-\right)
-\right]\\
-&&
--\beta\mathbb{E}_{i,t}
-\left[\mathcal{H}(\pi_\theta(\cdot\mid o_{i,t}))\right],
-\end{array}
-\end{equation}
-and follows the policy-improvement direction
-\begin{equation}
-g_\theta^{\mathrm{actor}}
-=
--\nabla_\theta\mathcal{L}_{\pi}.
-\end{equation}
-Here \(\mathcal H\) is the entropy of the categorical route distribution and
-\(\beta\) is its regularization weight.  Thus the global critic affects the
-actor through \(A_t^{\mathrm{global}}\), rather than only through a critic loss.
+Thus the global critic affects the actor through
+\(A_t^{\mathrm{global}}\), rather than only through a critic loss.
 % 中文注释：actor 最小化使用组合 advantage \(\bar A_{i,t}^{\mathrm{actor}}\) 的 clipped discrete surrogate，其中 \(\mathbb{E}_{i,t}\) 对 imagined minibatch 中的 active CAV decisions 求平均；随后，actor 沿 policy-improvement direction \(g_\theta^{\mathrm{actor}}=-\nabla_\theta\mathcal{L}_{\pi}\) 更新。这里，\(\mathcal H\) 是 categorical route distribution 的 entropy，\(\beta\) 是它的 regularization weight。global critic 不再只产生 critic loss；它的 detached lambda advantage 直接进入 actor objective。
 
 
@@ -250,36 +167,9 @@ Here \(\delta_{i,t}\) is the imagined travel time accumulated before the next
 decision or arrival, and \(\kappa_r\) controls the reward scale.
 % 中文注释：对于 CAV \(i\) 选择的 route，令 \(P_{i,t}^{\mathrm{rem}}\) 表示其尚未经过的 suffix。predicted remaining travel time 为 \(\widehat T_{i,t}^{\mathrm{rem}}=\sum_{u\in P_{i,t}^{\mathrm{rem}}}\widehat\tau_{t+1}(u)\)，per-vehicle reward 由 \(\delta_{i,t}=\min(\Delta t,\widehat T_{i,t}^{\mathrm{rem}})\) 和 \(r_{i,t}^{\mathrm{veh}}=-\delta_{i,t}/\kappa_r\) 给出。这里，\(\delta_{i,t}\) 是在下一次决策或到达之前累计的 imagined travel time，\(\kappa_r\) 控制 reward scale。在 CAV 的 imagined lifetime 内累积该 reward，可得到其 predicted travel time 的 dense surrogate。
 
-Returns are linked by vehicle identity.  Let
-\(\zeta_{i,t+1}^{\mathrm{act}}\in\{0,1\}\) indicate whether CAV \(i\) remains
-in \(\mathcal{I}_{t+1}^{\mathrm{im}}\).
-The masked bootstrap value, per-vehicle lambda return, and critic loss are
-\begin{equation}
-\begin{array}{rcl}
-\widetilde v_{i,t+1}^{\mathrm{veh}}
-&=&
-\zeta_{i,t+1}^{\mathrm{act}}v_{i,t+1}^{\mathrm{veh}},\\
-G_{i,t}^{\lambda}
-&=&
-r_{i,t}^{\mathrm{veh}}
-+\gamma\left[
-(1-\lambda)\widetilde v_{i,t+1}^{\mathrm{veh}}
-+\lambda G_{i,t+1}^{\lambda}
-\right],\\[0.35em]
-\mathcal{L}_{V}^{\mathrm{veh}}
-&=&
-\displaystyle
-\frac{1}{2}\mathbb{E}_{i,t}
-\left[
-(v_{i,t}^{\mathrm{veh}}
--\mathrm{sg}(G_{i,t}^{\lambda}))^2
-\right].
-\end{array}
-\end{equation}
-Here \(\gamma\) is the discount factor and \(\lambda\) is the trace parameter.
-Only observations of the same CAV are connected by this recursion.  Once the
-vehicle leaves the active set, \(\zeta_{i,t+1}^{\mathrm{act}}=0\) prevents
-bootstrapping beyond its imagined lifetime.
+The critic is trained by lambda returns linked by vehicle identity: only
+observations of the same CAV are connected by the recursion, and bootstrapping
+stops once the vehicle leaves the active set (Appendix~\ref{app:math-details}).
 % 中文注释：returns 按照 vehicle identity 连接。令 \(\zeta_{i,t+1}^{\mathrm{act}}\in\{0,1\}\) 表示 CAV \(i\) 是否仍属于 \(\mathcal{I}_{t+1}^{\mathrm{im}}\)。masked bootstrap value、per-vehicle lambda return 和 critic loss 分别为 \(\widetilde v_{i,t+1}^{\mathrm{veh}}=\zeta_{i,t+1}^{\mathrm{act}}v_{i,t+1}^{\mathrm{veh}}\)、\(G_{i,t}^{\lambda}=r_{i,t}^{\mathrm{veh}}+\gamma[(1-\lambda)\widetilde v_{i,t+1}^{\mathrm{veh}}+\lambda G_{i,t+1}^{\lambda}]\)，以及 \(\mathcal{L}_{V}^{\mathrm{veh}}=\frac{1}{2}\mathbb{E}_{i,t}[(v_{i,t}^{\mathrm{veh}}-\mathrm{sg}(G_{i,t}^{\lambda}))^2]\)。这里，\(\gamma\) 是 discount factor，\(\lambda\) 是 trace parameter。该递推只连接同一辆 CAV 的 observations。车辆离开 active set 后，\(\zeta_{i,t+1}^{\mathrm{act}}=0\)，因此不会在其 imagined lifetime 之外继续 bootstrap。
 
 \subsubsection{Global Critic}
@@ -329,28 +219,8 @@ with the global mean travel time over the remaining episode, and provides the
 bootstrap value at the imagination horizon.
 % 中文注释：global reward 按当前网络中所有车辆累计的通行时间对每个 decision interval 计费：\(r_t^{\mathrm{global}}=-\kappa_g N_{\mathrm{active}}(t)\Delta t/N_{\mathrm{veh}}\)。真实 transition 上 \(N_{\mathrm{active}}(t)\) 直接从 simulator 读取；imagined rollout 中用 decoded count field 求和 \(\sum_u\widehat n_{t,u}\)。由于 \(\sum_t N_{\mathrm{active}}(t)\Delta t\) 是整个 episode 累计的总通行时间，\(r_t^{\mathrm{global}}\) 的求和等于 \(-\kappa_g\) 倍的 Definition~7 global mean travel time。reward 本身是计算得到的，不需要学习；global critic 在这些 reward 上训练，预测未来累计 global return（与剩余 episode 的 global mean travel time 一致），并在 imagination horizon 末端提供 bootstrap value。
 
-The global critic is trained from the corresponding lambda return:
-\begin{equation}
-\begin{array}{rcl}
-G_t^{\mathrm{global}}
-&=&
-r_t^{\mathrm{global}}
-+\gamma\left[
-(1-\lambda)v_{t+1}^{\mathrm{global}}
-+\lambda G_{t+1}^{\mathrm{global}}
-\right],\\[0.35em]
-\mathcal{L}_{V}^{\mathrm{global}}
-&=&
-\displaystyle
-\frac{1}{2}\mathbb{E}_{t}
-\left[
-(v_t^{\mathrm{global}}
--\mathrm{sg}(G_t^{\mathrm{global}}))^2
-\right].
-\end{array}
-\end{equation}
-Here \(\mathbb{E}_t\) averages over imagined decision epochs.  This objective
-trains the global critic to summarize network-wide rollout quality.  Its detached residual
+The global critic is trained from the corresponding epoch-level lambda return
+(Appendix~\ref{app:math-details}).  Its detached residual
 \(A_t^{\mathrm{global}}=\mathrm{sg}(G_t^{\mathrm{global}}-v_t^{\mathrm{global}})\)
 enters every active CAV's actor advantage at epoch \(t\), weighted by
 \(\alpha_g\).

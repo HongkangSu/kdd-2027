@@ -50,18 +50,9 @@ pressure. And a flow-matching model predicts latent transitions.
 \subsubsection{GNN Traffic Encoder}
 
 Given the traffic field \(X_t\) and the adjacency matrix \(A\) of the road
-graph, a stack of GNN message-passing layers
-\begin{equation}
-\begin{array}{rcl}
-H^0 &=& X_tW_x,\\
-H^{\ell+1} &=&
-\mathrm{LN}\!\left(
-H^\ell+\sigma(AH^\ell W_m+H^\ell W_s)
-\right)
-\end{array}
-\end{equation}
-produces the latent traffic representation \(Z_t=H^L\), where \(W_x,W_m,W_s\) are learned projections, \(\sigma\) is a
-nonlinear activation function, and \(\mathrm{LN}\) denotes layer normalization.
+graph, a stack of graph convolution layers with residual connections and layer
+normalization (Appendix~\ref{app:math-details})
+produces the latent traffic representation \(Z_t\).
 Each row \(z_{t,u}=Z_t(u)\) summarizes road segment \(u\) together with its
 graph neighborhood. 
 % 中文注释：本段先给出设计目的（拥堵传播天然发生在路网图上，所以编码器要在 segment-node graph 上做消息传递），再给出 GNN 编码公式。\(z_{t,u}\) 概括了 segment \(u\) 及其邻域。写作功能：先讲 why 再讲 what，避免读者把编码器当成任意的实现选择。
@@ -79,16 +70,8 @@ h_\rho^x(\mathrm{SiLU}(W_d z_{t,u})).
 \end{array}
 \end{equation}
 
-The decoder is trained jointly with the dynamics model by adding the  reconstruction loss on observed traffic fields:
-\begin{equation}
-\begin{array}{rcl}
-\mathcal{L}_{\mathrm{rec}}
-&=&
-\displaystyle
-\frac{1}{M}\sum_{u\in N}
-\|\hat x^{\mathrm{dyn}}_{t,u}-x^{\mathrm{dyn}}_{t,u}\|^2.
-\end{array}
-\end{equation}
+The decoder is trained jointly with the dynamics model with a reconstruction
+loss on observed traffic fields (Appendix~\ref{app:math-details}).
 In actor-critic learning, the decoder is also used to calculate route-level episode rewards and value targets.
 % 中文注释：只有当 control 所需的 traffic quantities 可以从 latent representation 中重构出来时，该 representation 才能支持 policy learning。令 \(x^{\mathrm{dyn}}_{t,u}\) 表示 segment \(u\) 的动态观测向量，包括 occupancy、normalized speed、vehicle count 和 halting count。UrbanDreamer 通过 shared affine map 和 SiLU activation，再接独立的 linear channel heads，从 \(Z_t\) 中解码这些量。volume channel 在作为物理非负 volume 使用前会经过 softplus 映射。decoded speed 和 volume 随后提供 imagined rewards 与 route-cost features 使用的 travel-time readouts。decoder 通过 observed traffic fields 上的 reconstruction loss \(\mathcal{L}_{\mathrm{dec}}\) 训练；在 online world-model training 中，同一个 decoder 也用于监督 flow-matching transition 之后预测出的 next-step latents。这个 autoencoding constraint 防止 latent traffic representation 丢弃后续 imagined rollouts 中计算 rewards、route-cost features 和 value targets 所需的 observable traffic variables。
 
@@ -181,21 +164,10 @@ maps the resulting representations to the velocity estimate:
 \hat\nu_{t,\tau}=\nu_\phi(x_\tau,\tau,\mathcal{C}_t).
 \end{equation}
 % 中文注释：我们使用 segment-node traffic representations 上的 block-causal Transformer 来参数化 velocity predictor \(\nu_\phi\)。在每个 decision epoch，网络接收插值后的 representation \(x_\tau\)、\(\tau\) 的 flow-time embedding，以及由 \(\mathcal{C}_t\) 得到的 graph-aligned condition representations。Transformer 在同一步内混合 segment nodes 之间的信息，并通过 previous traffic representations 上的 causal attention 传播 temporal context。线性输出头将得到的 representations 映射为 velocity estimate \(\hat\nu_{t,\tau}=\nu_\phi(x_\tau,\tau,\mathcal{C}_t)\)。
-Because most road segments are empty most of the time, an
-unweighted objective would be dominated by nearly unchanged segment states. The training
-loss therefore applies segment weights \(w_{t,u}\) that emphasize
+Because most road segments are empty most of the time, the training
+loss applies per-segment weights \(w_{t,u}\) that emphasize
 occupied and congested segments while bounding the maximum weight to prevent
-degenerate focusing:
-\begin{equation}
-\begin{array}{l}
-\mathcal{L}_{\mathrm{FM}}
-=
-{E}_{t,\tau}
-\left[
-\sum_{u\in N}w_{t,u}\|\hat\nu_{t,\tau,u}-\nu_{t,\tau,u}\|^2
-\right],
-\end{array}
-\end{equation}
+degenerate focusing (Appendix~\ref{app:math-details}).
 % 中文注释：本段给出 velocity-field prediction 与加权 flow-matching 损失。残差 \(\delta_{t,\tau,u}\) 比较模型在 decision epoch \(t\)、flow time \(\tau\)、segment \(u\) 上预测的 velocity 和目标 velocity \(\nu^\star_{t,\tau,u}\)。权重 \(w_{t,u}\) 偏向有车和拥堵的 segment 并设上限防止退化聚焦；动机是绝大多数 segment 长期空闲，不加权会被自由流预测淹没。损失本身不需要模拟器 rollout。
 
 At imagination time, \(Z_{t+1}\) is unavailable, the next latent traffic representation is obtained by
@@ -229,100 +201,17 @@ responses, while day-to-day HDV demand shifts are learned from real simulator
 episodes rather than simulated inside imagination.
 
 
-\subsubsection{Response Target}
-
-We represent the HDV influence as the road-segment distribution
-\(H^{\mathrm{HDV}}\), where each entry summarizes how strongly
-the human-driven traffic background is associated with one road segment. Let \(h^{\mathrm{HDV}}_t\) denote the observed HDV
-background field over road segments at decision epoch \(t\).  For an observed
-episode of length \(T\), the supervision target is obtained by aggregating
-this background field over time and normalizing it across road segments:
-\begin{equation}
-\begin{array}{rcl}
-H^\star
-&=&
-\mathrm{Norm}\!\left(
-\displaystyle\frac{1}{T}\sum_{t=1}^{T} h^{\mathrm{HDV}}_t
-\right),
-\end{array}
-\end{equation}
-where \(\mathrm{Norm}\) clips negative entries and rescales the vector to sum
-to one. \(H^\star\) is the 
-HDV response field that summarizes the realized HDV traffic pattern
-under the episode-level CAV pressure pattern.
-% 中文注释：令 \(h^{\mathrm{HDV}}_t\in\mathbb{R}_{\ge0}^{M}\) 表示在 decision epoch \(t\) 观测到的 road segments 上的 HDV background field。对于长度为 \(T\) 的 observed episode，supervision target 通过在时间上聚合这个 background field 并在 road segments 上归一化得到：\(H^\star=\mathrm{Norm}(\frac{1}{T}\sum_{t=1}^{T}h^{\mathrm{HDV}}_t)\)。其中 \(\mathrm{Norm}\) 会裁剪负值并把向量重新缩放到和为 1。因此，\(H^\star\) 不是 per-vehicle route label；它是一个 slow background-response field，概括了 episode-level CAV pressure pattern 下实际形成的 HDV traffic pattern。
+The HDV influence is represented as a road-segment distribution
+\(H^{\mathrm{HDV}}\).  For an observed episode, the supervision target
+\(H^\star\) aggregates the observed HDV background field over time and
+normalizes it across road segments.  The response predictor is an MLP with a
+softmax output that estimates \(\hat H_e^{\mathrm{HDV}}\) from the previous
+episode's CAV pressure summary and HDV background, trained with a soft-label
+cross-entropy loss; it and the base world model use separate optimizers, so
+HDV adaptation is learned without treating HDVs as controllable
+(equations in Appendix~\ref{app:math-details}).
 
 
-\subsubsection{Auxiliary Response Prediction}
-
-The response predictor estimates how the HDV background evolves from one
-episode to the next after observing the previous episode's CAV pressure and
-HDV state.  For episode \(e\), we first summarize the CAV pressure in the
-previous episode:
-\begin{equation}
-\begin{array}{rcl}
-\bar\Psi_{e-1}^{\mathrm{CAV}}
-&=&
-\mathrm{Norm}\!\left(
-\displaystyle\frac{1}{T_{e-1}}
-\sum_{t=0}^{T_{e-1}-1}\Psi_{e-1,t}^{\mathrm{CAV}}
-\right),
-\end{array}
-\end{equation}
-and combine it with the previous HDV background
-\(H_{e-1}^{\mathrm{HDV}}\). The HDV response predictor is an MLP \(f_\psi^{\mathrm{HDV}}\)
-followed by a softmax over road segments:
-\begin{equation}
-\begin{array}{rcl}
-\hat H_e^{\mathrm{HDV}}
-&=&
-g_\psi^{\mathrm{HDV}}
-\!\left(
-\bar\Psi_{e-1}^{\mathrm{CAV}},
-H_{e-1}^{\mathrm{HDV}}
-\right),\\[0.35em]
-g_\psi^{\mathrm{HDV}}(\cdot)
-&=&
-\mathrm{softmax}\!\left(f_\psi^{\mathrm{HDV}}(\cdot)\right).
-\end{array}
-\end{equation}
-During supervised training,
-the response loss is a soft-label
-cross entropy over adjacent episode pairs:
-\begin{equation}
-\begin{array}{rcl}
-\mathcal{L}_{\mathrm{resp}}
-&=&
-\displaystyle
--
-\frac{1}{|\mathcal{E}_{\mathrm{pair}}|}
-\sum_{e\in\mathcal{E}_{\mathrm{pair}}}
-\sum_{u\in N}
-H_e^\star(u)
-\log \hat H_e^{\mathrm{HDV}}(u).
-\end{array}
-\end{equation}
-Here \(\mathcal{E}_{\mathrm{pair}}\) is the set of training episodes whose
-previous episode is available. \(H_e^\star\) is the target HDV response field.
-The response predictor and the base world model are optimized by two
-independent objectives with separate optimizers:
-\begin{equation}
-\begin{array}{rcl}
-\mathcal{L}_{\phi}
-&=&
-\mathcal{L}_{\mathrm{FM}}
-+
-\lambda_{\mathrm{rec}}\mathcal{L}_{\mathrm{rec}},\\[0.35em]
-\mathcal{L}_{\psi}
-&=&
-\mathcal{L}_{\mathrm{resp}}.
-\end{array}
-\end{equation}
-\(\mathcal{L}_{\phi}\) updates the encoder, flow dynamics, and decoder, while
-\(\mathcal{L}_{\psi}\) updates only the response predictor \(g_\psi^{\mathrm{HDV}}\).
-This auxiliary predictor gives the world model a dedicated channel for
-slow HDV adaptation across episodes, while preserving the modeling assumption
-that HDVs are not controlled by the learned CAV policy.
 % 中文注释：response predictor 估计 HDV background 在观察上一 episode 的 CAV pressure 和 HDV state 之后如何从一个 episode 演化到下一个 episode。对于 episode \(e\)，我们首先概括上一 episode 中的 CAV pressure：\(\bar\Psi_{e-1}^{\mathrm{CAV}}=\mathrm{Norm}(\frac{1}{T_{e-1}}\sum_{t=0}^{T_{e-1}-1}\Psi_{e-1,t}^{\mathrm{CAV}})\)，并将其与 previous HDV background \(H_{e-1}^{\mathrm{HDV}}\) 和 episode context \(\rho_e\) 结合。在我们的实现中，\(\rho_e\) 是 online response predictor 使用的 normalized episode progress。predictor 是一个 MLP \(f_\psi^{\mathrm{HDV}}\)，后接 road segments 上的 softmax：\(\hat H_e^{\mathrm{HDV}}=g_\psi^{\mathrm{HDV}}(\bar\Psi_{e-1}^{\mathrm{CAV}},H_{e-1}^{\mathrm{HDV}},\rho_e)\)，且 \(g_\psi^{\mathrm{HDV}}(\cdot)=\mathrm{softmax}(f_\psi^{\mathrm{HDV}}(\cdot))\)。在 supervised training 中，\(H_{e-1}^{\mathrm{HDV}}\) 是 observed previous target \(H_{e-1}^\star\)，prediction target 是 \(H_e^\star\)。在 online prediction time，\(H_{e-1}^{\mathrm{HDV}}\) 是最近可用的 previous-episode HDV state。response loss 是 adjacent episode pairs 上的 soft-label cross entropy：\(\mathcal{L}_{\mathrm{resp}}=-\frac{1}{|\mathcal{E}_{\mathrm{pair}}|}\sum_{e\in\mathcal{E}_{\mathrm{pair}}}\sum_{u\in N}H_e^\star(u)\log\hat H_e^{\mathrm{HDV}}(u)\)。这里 \(\mathcal{E}_{\mathrm{pair}}\) 是 previous episode 可用的 training episodes 集合。response module 作为 training pipeline 的 auxiliary component 优化；它的 loss 与 transition matching 和 representation reconstruction 一起构成整体 learned-model objective：\(\mathcal{L}_{\mathrm{WM}}=\mathcal{L}_{\mathrm{FM}}+\lambda_{\mathrm{dec}}\mathcal{L}_{\mathrm{dec}}+\lambda_{\mathrm{resp}}\mathcal{L}_{\mathrm{resp}}\)。这个 auxiliary objective 为 world model 提供了专门建模跨 episode 的 slow HDV adaptation 的通道，同时保留 HDV 不受 learned CAV policy 控制的建模假设。
 
 

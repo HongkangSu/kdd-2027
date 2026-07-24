@@ -1,0 +1,273 @@
+\section{Mathematical Details}
+\label{app:math-details}
+
+\paragraph{Route features and observation.}  Each candidate route is
+represented by mean pooling its segment latents, and the shared context
+summarizes the graph and decision progress:
+\begin{equation}
+\begin{array}{rcl}
+\varphi_{i,t,k}
+&=&
+\displaystyle
+\frac{1}{|P^k_{i,t}|}
+\sum_{u\in P^k_{i,t}}z_{t,u}.
+\end{array}
+\end{equation}
+\begin{equation}
+\begin{array}{rcl}
+\bar z_t
+&=&
+\displaystyle
+\frac{1}{|N|}\sum_{u\in N}z_{t,u},\\[0.35em]
+g_t
+&=&
+\displaystyle
+\left[
+\bar z_t,
+\frac{t}{T},
+\frac{|\mathcal{I}_t|}{|N^{\mathrm{CAV}}|}
+\right].
+\end{array}
+\end{equation}
+The vectorized realization of the observation operator is therefore
+\begin{equation}
+o_{i,t}
+=
+\big[
+\varphi_{i,t,1}\Vert\cdots\Vert
+\varphi_{i,t,K}\Vert g_t
+\big],
+\end{equation}
+where \(|N^{\mathrm{CAV}}|\) is the number of CAVs scheduled in the episode
+and \(\Vert\) denotes concatenation.
+
+\paragraph{Advantage normalization and PPO surrogate.}  The combined
+advantage is standardized over minibatch statistics \(\mu_A,\sigma_A\) and
+clipped to \([-c,c]\), and the probability ratio is clipped to
+\([1-\epsilon,1+\epsilon]\):
+\begin{equation}
+\begin{array}{rcl}
+\bar A_{i,t}^{\mathrm{actor}}
+&=&
+\displaystyle
+\mathrm{clip}\!\left(
+\frac{A_{i,t}^{\mathrm{actor}}-\mu_A}{\sigma_A+\varepsilon_A},-c,c
+\right),\\[0.35em]
+\rho_{i,t}
+&=&
+\displaystyle
+\frac{\pi_\theta(a_{i,t}\mid o_{i,t})}
+{\pi_{\mathrm{old}}(a_{i,t}\mid o_{i,t})},\\[0.35em]
+\bar\rho_{i,t}
+&=&
+\mathrm{clip}(\rho_{i,t},1-\epsilon,1+\epsilon).
+\end{array}
+\end{equation}
+The actor minimizes the clipped surrogate with entropy regularization:
+\begin{equation}
+\begin{array}{rcl}
+\mathcal{L}_{\pi}
+&=&
+-\mathbb{E}_{i,t}
+\left[
+\min\!\left(
+\rho_{i,t}\bar A_{i,t}^{\mathrm{actor}},
+\bar\rho_{i,t}\bar A_{i,t}^{\mathrm{actor}}
+\right)
+\right]\\
+&&
+-\beta\mathbb{E}_{i,t}
+\left[\mathcal{H}(\pi_\theta(\cdot\mid o_{i,t}))\right],
+\end{array}
+\end{equation}
+Here \(\mathbb{E}_{i,t}\) averages over active CAV decisions in the imagined
+minibatch, \(\mathcal H\) is the entropy of the categorical route
+distribution, and \(\beta\) is its weight.
+
+\paragraph{Per-vehicle lambda return.}  Returns are linked by vehicle
+identity.  Let \(\zeta_{i,t+1}^{\mathrm{act}}\in\{0,1\}\) indicate
+whether CAV \(i\) remains in \(\mathcal{I}_{t+1}^{\mathrm{im}}\).  The
+masked bootstrap value, per-vehicle lambda return, and critic loss are
+\begin{equation}
+\begin{array}{rcl}
+\widetilde v_{i,t+1}^{\mathrm{veh}}
+&=&
+\zeta_{i,t+1}^{\mathrm{act}}v_{i,t+1}^{\mathrm{veh}},\\
+G_{i,t}^{\lambda}
+&=&
+r_{i,t}^{\mathrm{veh}}
++\gamma\left[
+(1-\lambda)\widetilde v_{i,t+1}^{\mathrm{veh}}
++\lambda G_{i,t+1}^{\lambda}
+\right],\\[0.35em]
+\mathcal{L}_{V}^{\mathrm{veh}}
+&=&
+\displaystyle
+\frac{1}{2}\mathbb{E}_{i,t}
+\left[
+(v_{i,t}^{\mathrm{veh}}
+-\mathrm{sg}(G_{i,t}^{\lambda}))^2
+\right].
+\end{array}
+\end{equation}
+Only observations of the same CAV are connected by this recursion.  Once the
+vehicle leaves the active set, \(\zeta_{i,t+1}^{\mathrm{act}}=0\) prevents
+bootstrapping beyond its imagined lifetime.
+
+\paragraph{Global lambda return.}  The global critic is trained from the
+corresponding epoch-level lambda return:
+\begin{equation}
+\begin{array}{rcl}
+G_t^{\mathrm{global}}
+&=&
+r_t^{\mathrm{global}}
++\gamma\left[
+(1-\lambda)v_{t+1}^{\mathrm{global}}
++\lambda G_{t+1}^{\mathrm{global}}
+\right],\\[0.35em]
+\mathcal{L}_{V}^{\mathrm{global}}
+&=&
+\displaystyle
+\frac{1}{2}\mathbb{E}_{t}
+\left[
+(v_t^{\mathrm{global}}
+-\mathrm{sg}(G_t^{\mathrm{global}}))^2
+\right].
+\end{array}
+\end{equation}
+Here \(\mathbb{E}_t\) averages over imagined decision epochs.
+
+
+\paragraph{GNN traffic encoder.}  Given the traffic field \(X_t\) and the
+row-normalized adjacency matrix \(A\), the encoder applies
+\begin{equation}
+\begin{array}{rcl}
+H^0 &=& X_tW_x,\\
+H^{\ell+1} &=&
+\mathrm{LN}\!\left(
+H^\ell+\sigma(AH^\ell W_m+H^\ell W_s)
+\right)
+\end{array}
+\end{equation}
+where \(W_x,W_m,W_s\) are learned projections, \(\sigma\) is a nonlinear
+activation, and \(\mathrm{LN}\) denotes layer normalization.
+
+\paragraph{Decoder reconstruction loss.}  The decoder is trained jointly with
+the dynamics model with a reconstruction loss on observed traffic fields:
+\begin{equation}
+\begin{array}{rcl}
+\mathcal{L}_{\mathrm{rec}}
+&=&
+\displaystyle
+\frac{1}{M}\sum_{u\in N}
+\|\hat x^{\mathrm{dyn}}_{t,u}-x^{\mathrm{dyn}}_{t,u}\|^2.
+\end{array}
+\end{equation}
+
+\paragraph{Weighted flow-matching loss.}  Because most road segments are
+empty most of the time, the training loss applies per-segment weights
+\(w_{t,u}\) that emphasize occupied and congested segments, with a bounded
+maximum weight to prevent degenerate focusing:
+\begin{equation}
+\begin{array}{l}
+\mathcal{L}_{\mathrm{FM}}
+=
+{E}_{t,\tau}
+\left[
+\sum_{u\in N}w_{t,u}\|\hat\nu_{t,\tau,u}-\nu_{t,\tau,u}\|^2
+\right],
+\end{array}
+\end{equation}
+
+\paragraph{HDV response target and prediction.}  For an observed episode of
+length \(T\), the supervision target aggregates the observed HDV background
+field \(h^{\mathrm{HDV}}_t\) over time:
+\begin{equation}
+\begin{array}{rcl}
+H^\star
+&=&
+\mathrm{Norm}\!\left(
+\displaystyle\frac{1}{T}\sum_{t=1}^{T} h^{\mathrm{HDV}}_t
+\right),
+\end{array}
+\end{equation}
+where \(\mathrm{Norm}\) clips negative entries and rescales the vector to
+sum to one.  The predictor summarizes the previous episode's CAV pressure and
+estimates the next HDV response field with an MLP followed by a softmax:
+\begin{equation}
+\begin{array}{rcl}
+\bar\Psi_{e-1}^{\mathrm{CAV}}
+&=&
+\mathrm{Norm}\!\left(
+\displaystyle\frac{1}{T_{e-1}}
+\sum_{t=0}^{T_{e-1}-1}\Psi_{e-1,t}^{\mathrm{CAV}}
+\right),
+\end{array}
+\end{equation}
+\begin{equation}
+\begin{array}{rcl}
+\hat H_e^{\mathrm{HDV}}
+&=&
+g_\psi^{\mathrm{HDV}}
+\!\left(
+\bar\Psi_{e-1}^{\mathrm{CAV}},
+H_{e-1}^{\mathrm{HDV}}
+\right),\\[0.35em]
+g_\psi^{\mathrm{HDV}}(\cdot)
+&=&
+\mathrm{softmax}\!\left(f_\psi^{\mathrm{HDV}}(\cdot)\right).
+\end{array}
+\end{equation}
+The response loss is a soft-label cross entropy over adjacent episode pairs,
+and the response predictor and the base world model use separate optimizers:
+\begin{equation}
+\begin{array}{rcl}
+\mathcal{L}_{\mathrm{resp}}
+&=&
+\displaystyle
+-
+\frac{1}{|\mathcal{E}_{\mathrm{pair}}|}
+\sum_{e\in\mathcal{E}_{\mathrm{pair}}}
+\sum_{u\in N}
+H_e^\star(u)
+\log \hat H_e^{\mathrm{HDV}}(u).
+\end{array}
+\end{equation}
+\begin{equation}
+\begin{array}{rcl}
+\mathcal{L}_{\phi}
+&=&
+\mathcal{L}_{\mathrm{FM}}
++
+\lambda_{\mathrm{rec}}\mathcal{L}_{\mathrm{rec}},\\[0.35em]
+\mathcal{L}_{\psi}
+&=&
+\mathcal{L}_{\mathrm{resp}}.
+\end{array}
+\end{equation}
+Here \(\mathcal{E}_{\mathrm{pair}}\) is the set of training episodes whose
+previous episode is available.  \(\mathcal{L}_{\phi}\) updates the encoder,
+flow dynamics, and decoder, while \(\mathcal{L}_{\psi}\) updates only the
+response predictor \(g_\psi^{\mathrm{HDV}}\).
+
+\paragraph{Route candidate generation.}  Candidate routes are generated by
+repeated Dijkstra search on the segment graph.  The initial segment cost is
+the free-flow travel time \(c^1(u)=\ell(u)/v_{\max}(u)\).  After a route is
+found, all segment nodes on it are penalized before the next search:
+\begin{equation}
+\begin{array}{rcl}
+P^k_{i,t}
+&=&
+\mathrm{Dijkstra}(G,u_{i,t},g_i;c^k),\\
+c^{k+1}(u)
+&=&
+\left\{
+\begin{array}{ll}
+\eta c^k(u), & u\in P^k_{i,t},\\
+c^k(u), & u\notin P^k_{i,t},
+\end{array}
+\right.
+\end{array}
+\end{equation}
+where \(\eta>1\) is the route-diversity penalty.  The search stops when no
+new valid route can be found.

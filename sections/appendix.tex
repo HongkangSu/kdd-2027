@@ -67,7 +67,7 @@ and the same learning state persists across episodes.  During training
 evaluation, the adaptation state is checkpointed, frozen, and reloaded
 identically before evaluating every compared method.
 
-\section{Architecture and Training Details}
+\section{Architecture Details}
 \label{app:architecture}
 
 \paragraph{Encoder and decoder.}  The encoder projects the \(d_x=8\) segment
@@ -84,7 +84,7 @@ transformer with hidden size 256, 6 layers, and 4 attention heads: segment
 latents are packed into spatial tokens, attention mixes tokens within one
 decision epoch, and temporal context is attended causally over a sliding
 history window of up to \(k_{\max}=8\) past traffic representations.  The
-conditions \((\Psi_t^{\mathrm{CAV}},D_t,\hat H^{\mathrm{HDV}},C_t)\) are
+conditions \((\Psi_t^{\mathrm{CAV}},D_t,\hat H^{\mathrm{HDV}},c_t)\) are
 encoded and injected as additional conditioning inputs.  At imagination time
 the ODE is integrated with \(k=1\) explicit Euler step.  \(M=|N|\) denotes the
 number of segment nodes.
@@ -118,6 +118,8 @@ world-model updates and imagination together cost less than the initial fit.
 
 \input{table/training stage time}
 
+
+\input{sections/mathematical details}
 
 \section{Case Study and Visualization}
 
