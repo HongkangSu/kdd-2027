@@ -72,8 +72,18 @@ UrbanDreamer attains the lowest global mean travel time on Gretz-Armainvilliers 
 
 We evaluate the contributions of world model imagination, HDV response prediction, the vehicle and global critics, and the flow-matching transition model through controlled ablations. 
 
-We conduct three groups of ablation experiments. Efficiency ablation first isolates the contribution of world-model imagination to sample efficiency, component ablation evaluates the effects of the main components on final routing quality, and transition ablation compares the predictive quality of different transition models.
+We conduct three groups of ablation experiments. Component ablation evaluates the effects of the main components on final routing quality, efficiency ablation isolates the contribution of world-model imagination to sample efficiency, and transition ablation compares the predictive quality of different transition models.
 
+
+\subsubsection{Component Ablation}
+
+We compare UrbanDreamer with four variants to assess the contribution of each component to routing performance. Actor-Critic removes world-model imagination, w/o HDV Response removes HDV influence prediction, Vehicle Critic Only retains only the per-vehicle critic, and MSE Transition replaces flow matching with deterministic next-state regression.
+
+
+
+\input{table/ablation performance}
+
+Table~\ref{tab:ablation performance} shows that removing any component degrades routing performance on all three networks. Removing world-model imagination (Actor-Critic) causes the largest degradation on Ingolstadt and Fontenay-en-Parisis, while removing the HDV response module is most harmful on Gretz-Armainvilliers. Replacing flow matching with MSE regression also degrades both routing performance and prediction quality (Table~\ref{tab:wm-prediction-ablation}).
 
 \subsubsection{Efficiency Ablation}
 
@@ -85,16 +95,6 @@ We conduct three groups of ablation experiments. Efficiency ablation first isola
 \end{figure*}
 
 We compare UrbanDreamer with Actor-Critic (No World Model) to isolate the effect of world-model imagination. Figure~\ref{fig:efficiency_ablation} shows that UrbanDreamer improves substantially faster and reaches stable performance with fewer environment steps on all three networks, demonstrating that world model imagination improves sample efficiency.
-
-\subsubsection{Component Ablation}
-
-We compare UrbanDreamer with four variants to assess the contribution of each component to routing performance. Actor-Critic removes world-model imagination, w/o HDV Response removes HDV influence prediction, Vehicle Critic Only retains only the per-vehicle critic, and MSE Transition replaces flow matching with deterministic next-state regression.
-
-
-
-\input{table/ablation performance}
-
-Table~\ref{tab:ablation performance} shows that removing any component degrades routing performance on all three networks. Removing world-model imagination (Actor-Critic) causes the largest degradation on Ingolstadt and Fontenay-en-Parisis, while removing the HDV response module is most harmful on Gretz-Armainvilliers. Replacing flow matching with MSE regression also degrades both routing performance and prediction quality (Table~\ref{tab:wm-prediction-ablation}).
 
 \subsubsection{Transition Ablation}
 
