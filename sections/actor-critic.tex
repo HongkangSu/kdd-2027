@@ -19,22 +19,13 @@ aggregate value signal.
 
 \subsubsection{Vehicle-Level Imagination}
 
-The flow-matching dynamics model predicts traffic representations.
-To initialize an imagined rollout, we first sample a replay episode \(e\)
-uniformly and then randomly select an eligible decision epoch
-\(t_{\mathrm{start}}\).  Let \(L_{\mathrm{im}}\) denote the imagination
-horizon.  The aligned traffic field is encoded as
-\(Z_{t_{\mathrm{start}}}^{(e)}=
-f_\phi(X_{t_{\mathrm{start}}}^{(e)},G)\), while vehicle metadata from the same
-epoch initializes the current segment, destination, selected route suffix,
-elapsed time, and arrival status of each vehicle.  Starting from this sampled
-state, the actor and world model generate the imagined trajectory for
-\(t=t_{\mathrm{start}},\ldots,t_{\mathrm{start}}+L_{\mathrm{im}}-1\).
-% 中文注释：flow-matching dynamics model 预测 aggregate traffic representations。为了初始化 imagined rollout，我们首先均匀采样一个 replay episode \(e\)，然后随机选择一个符合条件的 decision epoch \(t_{\mathrm{start}}\)。令 \(L_{\mathrm{im}}\) 表示 imagination horizon。对齐的 traffic field 被编码为 \(Z_{t_{\mathrm{start}}}^{(e)}=f_\phi(X_{t_{\mathrm{start}}}^{(e)},G)\)，同一时刻的 vehicle metadata 则用于初始化每辆车的 current segment、destination、selected route suffix、elapsed time 和 arrival status。从这个采样状态开始，actor 和 world model 生成 \(t=t_{\mathrm{start}},\ldots,t_{\mathrm{start}}+L_{\mathrm{im}}-1\) 上的 imagined trajectory。
-
-At each imagined decision epoch, the actor selects a route and the decoder
-recovers the predicted speed \(\widehat v_{t,u}\) of each road segment from
-\(Z_t\).  The predicted travel time of road segment \(u\) is
+Imagined rollouts start from a replay state: we sample a replay episode and a
+decision epoch \(t_{\mathrm{start}}\), encode the aligned traffic field as
+\(Z_{t_{\mathrm{start}}}=f_\phi(X_{t_{\mathrm{start}}},G)\), and initialize
+each vehicle's current segment, destination, route suffix, and arrival status
+from the same epoch.  At each imagined epoch, the actor selects a route and
+the decoder recovers the segment speed \(\widehat v_{t,u}\), giving the
+predicted segment travel time
 \begin{equation}
 \begin{array}{rcl}
 \widehat\tau_t(u)
@@ -43,20 +34,18 @@ recovers the predicted speed \(\widehat v_{t,u}\) of each road segment from
 \frac{\ell(u)}{\widehat v_{t,u}}.
 \end{array}
 \end{equation}
-Here \(\ell(u)\) is the segment length, so \(\widehat\tau_t(u)\) estimates the
-time required to traverse segment \(u\) under the imagined traffic state.  During a fixed time interval of \(\Delta t\),
-each vehicle travels along the selected route by consuming these segment travel
-times in route order, while the learned transition predicts \(Z_{t+1}\) and starts the next decision epoch.
-Because the wrapper advances vehicles with the same decoded travel-time
-readout that the decoder derives from \(Z_t\), vehicle positions and the
-segment traffic field evolve from a shared prediction rather than from two
-independent state estimates.
-% 中文注释：在每个 imagined decision epoch，actor 选择一条 route，decoder 则从 \(Z_t\) 恢复每条 road segment 的 predicted speed \(\widehat v_{t,u}\)。road segment \(u\) 的 predicted travel time 为 \(\widehat\tau_t(u)=\ell(u)/\widehat v_{t,u}\)。这里，\(\ell(u)\) 是 segment length，因此 \(\widehat\tau_t(u)\) 估计车辆在 imagined traffic state 下通过 segment \(u\) 所需的时间。deterministic vehicle wrapper 为每辆 active CAV 提供 \(\Delta t\) 的时间预算，并按照 route 顺序消耗这些 segment travel times，使车辆沿 selected route 前进；与此同时，learned transition 预测 \(Z_{t+1}\)。随后，wrapper 为下一次决策重新生成 current-to-destination candidate routes。
-
-At the beginning of the next imagined decision epoch, the vehicles reaching departure time are added, and the arrived vehicles are removed. The remaining
-CAVs form \(\mathcal{I}_{t+1}^{\mathrm{im}}\) and contribute actor
-samples, rewards, and per-vehicle bootstrap values.
-% 中文注释：在下一个 imagined decision epoch 开始时，wrapper 加入 scheduled departure time 已经到达的 CAV，并移除已经到达或不存在有效 current-to-destination candidate route 的 CAV。其余车辆构成 \(\mathcal{I}_{t+1}^{\mathrm{im}}\)，并且只有这些车辆会产生 actor samples、rewards 和 per-vehicle bootstrap values。该 wrapper 在不要求 graph-level world model 预测 per-vehicle terminal variables 的情况下显式保留 vehicle identity。
+During a decision interval \(\Delta t\), a deterministic vehicle wrapper
+advances each vehicle along its selected route by consuming these travel times
+in route order, while the learned transition predicts \(Z_{t+1}\).  Because
+the wrapper and the transition consume the same decoded readout, vehicle
+positions and the segment traffic field evolve from a single prediction rather
+than two independent state estimates.  Vehicles reaching their departure time
+are added at the next epoch and arrived vehicles are removed; the remaining
+CAVs form \(\mathcal{I}_{t+1}^{\mathrm{im}}\) and alone contribute actor
+samples, rewards, and bootstrap values.  This wrapper keeps vehicle identity
+explicit without requiring the graph-level world model to predict per-vehicle
+terminal variables.
+% 中文注释：imagined rollout 从 replay state 初始化：采样 replay episode 和 decision epoch \(t_{\mathrm{start}}\)，编码 \(Z_{t_{\mathrm{start}}}=f_\phi(X_{t_{\mathrm{start}}},G)\)，并从同一 epoch 初始化每辆车的 current segment、destination、route suffix 和 arrival status。每个 imagined epoch,actor 选择 route,decoder 给出 segment speed \(\widehat v_{t,u}\) 和 travel time \(\widehat\tau_t(u)=\ell(u)/\widehat v_{t,u}\)。deterministic vehicle wrapper 在 \(\Delta t\) 内按 route 顺序消耗这些 travel time 推进车辆，同时 transition 预测 \(Z_{t+1}\);wrapper 与 transition 共享同一 decoded readout，因此车辆位置与 segment field 来自同一个预测。到点车辆加入、到达车辆移除，剩余 CAV 构成 \(\mathcal{I}_{t+1}^{\mathrm{im}}\)。该 wrapper 在不要求 world model 预测 per-vehicle terminal variables 的情况下显式保留 vehicle identity。
 
 \subsubsection{Parameter-Shared CAV Route Actor}
 
