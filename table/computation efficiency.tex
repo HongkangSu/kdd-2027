@@ -1,0 +1,17 @@
+\begin{table}[t]
+  \centering
+  \caption{Training time in hours required to reach convergence. All runs use a single NVIDIA RTX 3090 GPU. Lower values indicate better performance; the best value in each row is in bold.}
+  \renewcommand{\arraystretch}{1.0}
+  \resizebox{\columnwidth}{!}{
+    \begin{tabular}{lccccc}
+      \toprule
+      Network & IQL & IPPO & MAPPO & MAMBA & \textbf{UrbanDreamer} \\
+      \midrule
+      Gretz-Armainvilliers & 28.8 & 33.0 & 35.1 & 37.0 & \textbf{17.4} \\
+      Ingolstadt & 15.3 & 10.4 & 13.9 & 10.2 & \textbf{5.6} \\
+      Fontenay-en-Parisis & 78.2 & 96.1 & 85.6 & 78.9 & \textbf{33.3} \\
+      \bottomrule
+    \end{tabular}
+  }
+  \label{tab:computation-efficiency}
+\end{table}
