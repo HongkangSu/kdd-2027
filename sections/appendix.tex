@@ -33,12 +33,14 @@ for all networks.
 
 \paragraph{Training and evaluation protocol.}  The world-model warm-up
 collects exploratory episodes in which every CAV follows an
-\(\epsilon\)-greedy routing rule (\(\epsilon=0.4\)).  The online stage runs
-500 episodes per network, saving checkpoints every 25 episodes.  Each
-checkpoint is then evaluated on 5 held-out episodes with the same masked
-stochastic route sampling used in collection.  Convergence is declared when
-the standard deviation of \(T_{\mathrm{all}}\) over 20 consecutive training
-episodes falls below 0.06.  All runs use a single NVIDIA RTX 3090 GPU.
+\(\epsilon\)-greedy routing rule (\(\epsilon=0.4\)).  UrbanDreamer's online
+stage runs 200 episodes per network, saving checkpoints every 25 episodes,
+while the model-free baselines are trained for 500 episodes under the same
+protocol.  Each checkpoint is then evaluated on 5 held-out episodes with the
+same masked stochastic route sampling used in collection.  Convergence is
+declared when the standard deviation of \(T_{\mathrm{all}}\) over 20
+consecutive training episodes falls below 0.06, and the reported training
+times are measured to convergence.  All runs use a single NVIDIA RTX 3090 GPU.
 
 \paragraph{Toy network.}  The scalability profile additionally includes a
 small synthetic Toy network with 24 registered road segments and the same
