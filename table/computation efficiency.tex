@@ -1,10 +1,12 @@
 \begin{table}[t]
   \centering
-  \caption{Training time in hours required to reach convergence. All runs use a single NVIDIA RTX 3090 GPU. Lower values indicate better performance; the best value in each row is in bold.}
+  \caption{Computational efficiency on the three urban networks. All runs use a single NVIDIA RTX 3090 GPU. Lower values indicate better performance; the best value in each row is in bold.}
   \renewcommand{\arraystretch}{1.0}
   \resizebox{\columnwidth}{!}{
     \begin{tabular}{lccccc}
       \toprule
+      & \multicolumn{5}{c}{Training time to convergence (h) $\downarrow$} \\
+      \cmidrule(lr){2-6}
       Network & IQL & IPPO & MAPPO & MAMBA & \textbf{UrbanDreamer} \\
       \midrule
       Gretz-Armainvilliers & 28.8 & 33.0 & 35.1 & 37.0 & \textbf{17.4} \\

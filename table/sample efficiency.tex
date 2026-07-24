@@ -1,10 +1,12 @@
 \begin{table}[t]
   \centering
-  \caption{Sample efficiency: real SUMO environment steps required to reach convergence. Lower values indicate better performance; the best value in each row is in bold.}
+  \caption{Sample efficiency on the three urban networks. Lower values indicate better performance; the best value in each row is in bold.}
   \renewcommand{\arraystretch}{1.0}
   \resizebox{\columnwidth}{!}{
     \begin{tabular}{lccccc}
       \toprule
+      & \multicolumn{5}{c}{Environment steps to convergence (steps) $\downarrow$} \\
+      \cmidrule(lr){2-6}
       Network & IQL & IPPO & MAPPO & MAMBA & \textbf{UrbanDreamer} \\
       \midrule
       Gretz-Armainvilliers & 13,320 & 9,240 & 3,540 & 8,760 & \textbf{2,040} \\
