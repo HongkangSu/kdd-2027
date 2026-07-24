@@ -47,6 +47,37 @@ as the smallest pilot point in
 Figure~\ref{fig:scalability_training_time} and is not used in any other
 experiment.
 
+\section{Baseline Implementations}
+\label{app:baselines}
+
+All learning baselines use the same route-candidate observations and valid
+candidate masks as UrbanDreamer, and are trained on the same episodes under
+the protocol of Appendix~\ref{app:exp-settings}.
+
+\paragraph{Greedy heuristics.}  Free-flow greedy and live-current greedy are
+training-free: at each decision they select the valid candidate with the
+smallest sum of free-flow or current segment travel times, respectively.
+
+\paragraph{IQL.}  Independent Q-learning with a parameter-shared Q-network
+over the route observations.  Exploration is \(\epsilon\)-greedy over valid
+candidates, with \(\epsilon\) decayed from \(0.99\) to \(0.05\) per decision.
+
+\paragraph{IPPO.}  Independent PPO with a parameter-shared actor--critic,
+probability-ratio clip \(0.2\), and entropy regularization; each CAV learns
+from its own transitions.
+
+\paragraph{MAPPO.}  The same decentralized actor as IPPO, trained with a
+centralized critic that reads the joint traffic state and outputs a value for
+each vehicle slot (three hidden layers of width 64).
+
+\paragraph{MAMBA.}  A Dreamer-style multi-agent model-based baseline using
+the upstream architecture defaults: a per-agent discrete latent state model
+(\(32\times32\) categoricals) with transformer dynamics (3 layers, 8 heads),
+imagination horizon 15, and PPO clip \(0.075\).  Unlike UrbanDreamer, MAMBA's
+learned model is agent-centric: it does not model the segment-level traffic
+field or the HDV demand, and its world model, actor, and critic are trained
+from the same online episodes as the other baselines.
+
 \section{HDV Adaptation in the Simulator}
 \label{app:hdv-adaptation}
 
