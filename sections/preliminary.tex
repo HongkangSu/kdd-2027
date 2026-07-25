@@ -2,88 +2,74 @@
 
 \subsection{Problem Formulation}
 
-In this section, we formally define the mixed-autonomy dynamic routing problem
-studied in this paper. A typical scenario contains connected and autonomous vehicles‌(CAVs) and
-human-driven vehicles(HDVs) moving over a directed road network under
-time-varying departure demand. The road network, vehicle population, route
-candidates, segment-indexed traffic fields, and decision timing constitute the
-basic components of the problem. We first define these components and then cast
-the control process as a Markov decision process.
-% 中文注释：本节正式定义本文研究的 mixed-autonomy dynamic routing problem。一个典型场景包含在有向路网和随时间变化的出发需求下行驶的可控 CAVs 与自利且不可控的 HDVs。road network、vehicle population、route candidates、segment-indexed traffic fields 和 decision timing 构成该问题的基本组成部分。我们先定义这些组成部分，然后将控制过程表述为一个 Markov decision process。
+We study mixed-autonomy dynamic routing: connected and autonomous vehicles
+(CAVs) and human-driven vehicles (HDVs) travel over a directed road network
+under time-varying departure demand, and a controller routes the CAVs.  We
+first define the problem components and then cast the control process as a
+Markov decision process.
+% 中文注释：本节定义 mixed-autonomy dynamic routing 问题：在有向路网和时变出发需求下，控制器为 CAV 选路，HDV 不可控。先定义组成部分，再表述为 MDP。
 
 \noindent\textbf{Definition 1 (Segment-Node Road Network).}
-We represent the road network as a directed graph
-\(G=(N,E)\).  Each node \(u\in N\) is a road segment on which traffic
-state can be measured, predicted, and controlled through route choices.  A
-directed edge \((u,v)\in E\) exists when vehicles can move directly from road
-segment \(u\) to road segment \(v\).
-% 中文注释：我们将 road network 表示为一个 directed graph \(G=(N,E)\)。每个 node \(u\in N\) 是一条 road segment，其上的 traffic state 可以被测量、预测，并通过 route choices 受到控制。当车辆可以从 road segment \(u\) 直接移动到 road segment \(v\) 时，存在 directed edge \((u,v)\in E\)。
-
-Each segment node has static attributes such as length, speed limit, lane
-count, road type, capacity, and free-flow travel time. A fixed node ordering assigns every road segment a stable index and stores the adjacency matrix \(A\).
-% 中文注释：每个 segment node 具有 length、speed limit、lane count、road type、capacity 和 free-flow travel time 等静态属性。固定的 node ordering 为每条 road segment 分配稳定 index，并存储 \(G\) 的 row-normalized adjacency matrix \(A\in\mathbb{R}^{M\times M}\)。
-
+The road network is a directed graph \(G=(N,E)\), where each node \(u\in N\)
+is a road segment with static attributes (length, speed limit, lane count,
+road type, capacity, free-flow travel time), and a directed edge \((u,v)\in E\)
+exists when vehicles can move directly from segment \(u\) to segment \(v\).  A
+fixed node ordering assigns every segment a stable index and stores the
+adjacency matrix \(A\).
+% 中文注释：road network 表示为 directed graph \(G=(N,E)\)：node 是 road segment（带静态属性），有向边表示可直接通行；固定 node ordering 存储邻接矩阵 \(A\)。
 
 \noindent\textbf{Definition 2 (Vehicles).}
-We partition the departure horizon, spanning from the beginning to the final scheduled vehicle departure, into fixed decision intervals indexed by decision epochs \(t=0,\ldots,T\). At decision epoch \(t\), the active vehicle population is
-\(\mathcal{N}_t=\mathcal{N}^{\mathrm{CAV}}_t\cup
-\mathcal{N}^{\mathrm{HDV}}_t\).  CAVs are controlled by the learned routing
-policy, whereas HDVs are self-interested agents whose routing behavior can not be controlled in this problem. Each vehicle \(i\) has its origin segment
-\(o_i\), destination segment \(g_i\), a scheduled departure time
-\(\tau_i^{\mathrm{dep}}\), and a type
-\(m_i\in\{\mathrm{CAV},\mathrm{HDV}\}\). If vehicle \(i\) is active at
-decision epoch \(t\), \(u_{i,t}\) denotes its current segment node.
-% 中文注释：在 decision epoch \(t\)，active vehicle population 为 \(\mathcal{N}_t=\mathcal{N}^{\mathrm{CAV}}_t\cup \mathcal{N}^{\mathrm{HDV}}_t\)。CAVs 由学习得到的 routing policy 控制，而 HDVs 是自利的 agents，其 routing behavior 不由 UrbanDreamer 直接控制。每辆车 \(i\) 具有 origin segment \(o_i\)、destination segment \(g_i\)、scheduled departure time \(\tau_i^{\mathrm{dep}}\)，以及 type \(m_i\in\{\mathrm{CAV},\mathrm{HDV}\}\)。如果车辆 \(i\) 在 decision epoch \(t\) 处于 active 状态，则 \(u_{i,t}\) 表示其 current segment node。
-
+The departure horizon is partitioned into fixed decision intervals indexed by
+decision epochs \(t=0,\ldots,T\).  At epoch \(t\), the active vehicle
+population is \(\mathcal{N}_t=\mathcal{N}^{\mathrm{CAV}}_t\cup
+\mathcal{N}^{\mathrm{HDV}}_t\).  Each vehicle \(i\) has an origin segment
+\(o_i\), a destination segment \(g_i\), a scheduled departure time
+\(\tau_i^{\mathrm{dep}}\), and a type \(m_i\in\{\mathrm{CAV},\mathrm{HDV}\}\);
+\(u_{i,t}\) denotes its current segment when active.  CAVs are controlled by
+the learned routing policy, whereas HDVs are self-interested and cannot be
+rerouted.
+% 中文注释：出发时域划分为 decision epochs。每辆车有 origin、destination、departure time 和类型；CAV 由策略控制，HDV 自利不可控。
 
 \noindent\textbf{Definition 3 (Route Candidates and Decision Timing).}
-When CAV \(i\) is active at decision epoch \(t\), it must select one route from
-route candidates
+An active CAV \(i\) at epoch \(t\) selects one route from its candidates
 \begin{equation}
 \mathcal{P}_{i,t}
 =
-\{P^1_{i,t},\ldots,P^{K}_{i,t}\}.
+\{P^1_{i,t},\ldots,P^{K}_{i,t}\},
 \end{equation}
-Here each candidate route is a sequence of segment nodes
-connecting the current segment \(u_{i,t}\) to the destination segment \(g_i\).
-The CAV action is the route index \(a_{i,t}\in\{1,\ldots,K\}\), which
-selects candidate route \(P^{a_{i,t}}_{i,t}\). In contrast, an HDV makes its
-route choice only at its departure time \(\tau_i^{\mathrm{dep}}\)(considering human travel intent).
-% 中文注释：当 CAV \(i\) 在 decision epoch \(t\) 处于 active 状态时，它必须从有限的 current-to-destination candidate set \(\mathcal{P}_{i,t}=\{P^1_{i,t},\ldots,P^{K_i(t)}_{i,t}\}\) 中选择一条路线。这里 \(K_i(t)\le K\)，每条 candidate path 是一个 segment nodes 序列，将 current segment \(u_{i,t}\) 连接到 destination segment \(g_i\)。CAV action 是 route index \(a_{i,t}\in\{1,\ldots,K_i(t)\}\)，它选择 candidate path \(P^{a_{i,t}}_{i,t}\)。相反，HDV 只在其 departure time \(\tau_i^{\mathrm{dep}}\) 做 route choice（考虑到人类出行意图）
-
-Route candidates are generated by repeated Dijkstra search on the road segment
-graph with a route-diversity penalty (Appendix~\ref{app:math-details}). The search stops when no new
-valid route can be found.
-% 中文注释：candidate routes 由 segment graph 上的 repeated Dijkstra search 生成。令 \(\ell(u)\) 和 \(v_{\max}(u)\) 表示 segment node \(u\) 的 length 和 speed limit。初始 segment cost 是它的 free-flow travel time，满足 \(c^1(u)=t_{\mathrm{ff}}(u)\)，且 \(t_{\mathrm{ff}}(u)=\ell(u)/\max(v_{\max}(u),\varepsilon)\)。对于 \(k=1,\ldots,K\)，generator 会尝试在当前 cost \(c^k\) 下运行 Dijkstra。找到一条 route 之后，该 route 上的所有 segment nodes 会在下一次搜索之前被惩罚：\(R^k_{i,t}=\mathrm{Dijkstra}(G,u_{i,t},g_i;c^k)\)，且如果 \(u\in R^k_{i,t}\)，则 \(c^{k+1}(u)=\eta c^k(u)\)，否则 \(c^{k+1}(u)=c^k(u)\)。这里 \(\eta>1\) 是 route-diversity penalty。当找不到新的有效 route 时，搜索停止。
-
-
+where each candidate is a sequence of segment nodes connecting the current
+segment \(u_{i,t}\) to the destination \(g_i\), and the action is the route
+index \(a_{i,t}\in\{1,\ldots,K\}\).  Candidates are generated by repeated
+Dijkstra search with a route-diversity penalty
+(Appendix~\ref{app:math-details}).  An HDV instead makes its route choice
+only at its departure time \(\tau_i^{\mathrm{dep}}\).
+% 中文注释：active CAV 每轮从 K 条候选（当前 segment 到目的地的 segment 序列）中选一条，action 是 route index；候选由带多样性惩罚的重复 Dijkstra 生成（附录）。HDV 只在出发时选路。
 
 \subsection{Markov Decision Process}
 
-Mixed-autonomy routing game is a sequential decision-making problem over decision epochs. We model the route-choice process as a Markov
-decision process \(\mathcal{M}=(\mathcal{S},\mathcal{A},\mathcal{T},r,\gamma)\),
-defined as follows.
-% 中文注释：mixed-autonomy routing 是一个随固定 decision epochs 展开的 sequential decision-making problem。我们将 route-choice process 建模为 finite-horizon Markov decision process \(\mathcal{M}=(\mathcal{S},\mathcal{A},\mathcal{T},r,\gamma)\)，定义如下。
+We model the route-choice process as a Markov decision process
+\(\mathcal{M}=(\mathcal{S},\mathcal{A},\mathcal{T},r,\gamma)\).
+% 中文注释：将选路过程建模为 MDP \(\mathcal{M}=(\mathcal{S},\mathcal{A},\mathcal{T},r,\gamma)\)。
 
 \noindent\textbf{Definition 4 (Observation/State).}
-At decision epoch \(t\), the global state \(s_t\in\mathcal{S}\) includes the
-road graph \(G\), scheduled vehicles with their attributes, and current route candidates. Each active agent(CAV) observes a
-projection of the global state \(o_{i,t}=\mathcal{O}_i(s_t)\), which
-contains the current position, destination, candidate routes, and route-level
-traffic summaries.
-
-We also define a segment graph observation projected from the global state \(X_t=\chi(s_t,G)\). For each road segment \(u\), \(X_t(u)\) contains both static and dynamic features:
+At epoch \(t\), the global state \(s_t\in\mathcal{S}\) includes the road
+graph, the scheduled vehicles with their attributes, and the current route
+candidates.  Each active CAV observes a projection
+\(o_{i,t}=\mathcal{O}_i(s_t)\) containing its current position, destination,
+candidate routes, and route-level traffic summaries.  For traffic prediction,
+the state is also projected onto the segment graph as
+\(X_t=\chi(s_t,G)\), where each segment carries static and dynamic features:
 \begin{equation}
 \begin{array}{l}
 X_t(u)=
 [\mathrm{c}_t(u),\ v_t(u),
 \kappa(u),
 \ell(u),\ v_{\max}(u),
-\lambda(u)].
+\lambda(u)],
 \end{array}
 \end{equation}
-Here \(\mathrm{c}_t\) is vehicle counts, \(v_t\) is dynamic speed, \(\kappa\) is capacity, \(\ell\) is
-length, and \(v_{\max}\) is speed limit, \(\lambda\) is lane count.
+with vehicle count \(\mathrm{c}_t\), speed \(v_t\), capacity \(\kappa\),
+length \(\ell\), speed limit \(v_{\max}\), and lane count \(\lambda\).
 
 The tensor \(X_t\) is not equivalent to \(s_t\).  It is a lossy
 segment-aligned view that removes vehicle identities, individual destinations,
@@ -91,42 +77,41 @@ and chosen route suffixes.  These components re-enter the model through the
 vehicle observations \(o_{i,t}\), the planned CAV pressure, the departure
 demand, the HDV influence, and the episode context, which together condition
 the learned transition.
-
-% 中文注释：在 decision epoch \(t\)，global state \(s_t\in\mathcal{S}\) 包括 road graph \(G\)、current time、带有 types、origins、destinations 和 departure times 的 scheduled vehicles、active CAV 和 HDV 集合、active vehicles 的 current segment 和 route status、episode 中更早的 route choices、当前 CAV candidate-route lists，以及 departure demand \(D_t\)。每个 agent 观察一个投影 \(o_{i,t}=\mathcal{O}_i(s_t)\)。对于 active CAV，\(o_{i,t}\) 包含其 current segment、destination、candidate routes、route-level traffic summaries、route-cost estimates 和 validity information；对于 HDV，该 observation 是 background human-routing behavior 使用的 departure-time information。
-
-
+% 中文注释：global state 包含路网、计划车辆及其属性、当前候选路线；active CAV 观察投影 \(o_{i,t}=\mathcal{O}_i(s_t)\)。用于交通预测的 segment 图投影 \(X_t=\chi(s_t,G)\) 是 \(s_t\) 的有损视图，移除的 identity/destination/route suffix 经 \(o_{i,t}\)、CAV pressure、departure demand、HDV influence 和 episode context 重新进入模型。
 
 \noindent\textbf{Definition 5 (Action).}
-Let
-\(\mathcal{I}_t\subseteq\mathcal{N}^{\mathrm{CAV}}_t\) denote the active CAVs
-that can be routed at decision epoch \(t\). The joint action is
+Let \(\mathcal{I}_t\subseteq\mathcal{N}^{\mathrm{CAV}}_t\) denote the active
+CAVs at epoch \(t\).  The joint action is
 \begin{equation}
 \begin{array}{rcl}
 a_t&=&(a_{i,t})_{i\in\mathcal{I}_t},\\
 \mathcal{A}_t&=&
-\displaystyle\prod_{i\in\mathcal{I}_t}\{1,\ldots,K\}.
+\displaystyle\prod_{i\in\mathcal{I}_t}\{1,\ldots,K\},
 \end{array}
 \end{equation}
-where \(a_{i,t}=k\) selects candidate route \(P^k_{i,t}\). HDV route choices
-are generated by the background human-routing behavior at departure time and
-are treated as part of the environment.
-% 中文注释：agent set 是 scheduled vehicle population，但只有 CAVs 是可控的。令 \(\mathcal{I}_t\subseteq\mathcal{N}^{\mathrm{CAV}}_t\) 表示 decision epoch \(t\) 中可以被 routing 的 active CAVs。joint action 为 \(a_t=(a_{i,t})_{i\in\mathcal{I}_t}\)，\(\mathcal{A}_t=\prod_{i\in\mathcal{I}_t}\{1,\ldots,K\}\)。其中 \(a_{i,t}=k\) 选择 candidate route \(P^k_{i,t}\)。HDV route choices 由 background human-routing behavior 在 departure time 生成，并被视为 environment 的一部分。
+where \(a_{i,t}=k\) selects candidate route \(P^k_{i,t}\).  HDV route choices
+are generated by the background human-routing behavior and are treated as part
+of the environment.
+% 中文注释：joint action 是 active CAV 的 route index 向量；HDV 选路属于环境。
 
 \noindent\textbf{Definition 6 (Transition).}
-Given the current state, joint CAV action, departure demand\(D_t\)during the decision interval, and HDV traffic state(influence caused by HDV routing, such as speed and position)
-, the transition is
+Given the current state, the joint CAV action, the departure demand \(D_t\),
+and the HDV traffic state \(H_t^{\mathrm{HDV}}\), the transition is
 \begin{equation}
 \begin{array}{l}
 s_{t+1}\sim
 \mathcal{T}(\cdot\mid s_t,a_t,D_t,H_t^{\mathrm{HDV}}).
 \end{array}
 \end{equation}
-With newly departing vehicles, HDV traffic state, selected CAV routes, the transition progresses vehicles and updates road segments' speed and occupancy, and active sets of vehicles.
-% 中文注释：给定 current state、joint CAV action、departure demand 和 HDV background behavior，transition 为 \(s_{t+1}\sim\mathcal{T}(\cdot\mid s_t,a_t,D_t,H_t^{\mathrm{HDV}})\)。该 transition 注入新出发车辆，记录 HDV departure-time route choices，应用 selected CAV routes，使车辆在 segment-node graph 上前进，并更新 queues、speeds、arrivals 和 active sets。
+It injects newly departing vehicles, applies the selected routes, advances all
+vehicles, and updates segment speeds, occupancies, and active sets.
+% 中文注释：transition 注入新出发车辆、应用所选路线、推进所有车辆并更新 segment 速度、占有率和 active 集合。
 
 \noindent\textbf{Definition 7 (Objective/Reward).}
-At the end of an episode, each completed vehicle(both CAV and HDV) has travel time
-\(\Delta_i=t_i^{\mathrm{arr}}-\tau_i^{\mathrm{dep}}\). The main optimization objective is system-level: minimize the expected global mean travel time over all completed vehicles,
+Each completed vehicle \(i\) (CAV or HDV) has travel time
+\(\Delta_i=t_i^{\mathrm{arr}}-\tau_i^{\mathrm{dep}}\).  The objective is
+system-level: minimize the expected global mean travel time over all completed
+vehicles,
 \begin{equation}
 \begin{array}{rcl}
 \min\quad
@@ -137,15 +122,8 @@ At the end of an episode, each completed vehicle(both CAV and HDV) has travel ti
 \frac{1}{|\mathcal{N}^{\mathrm{arr}}|}
 \sum_{i\in\mathcal{N}^{\mathrm{arr}}}
 \Delta_i
-\right].
+\right],
 \end{array}
 \end{equation}
-
-Here \(\mathcal{N}^{\mathrm{arr}}\) is the set of arrived vehicles, 
-\(t_i^{\mathrm{arr}}\) is the arrival time of vehicle \(i\), and \(\tau_i^{\mathrm{dep}}\) is the departure time of vehicle \(i\).
-
-%这里有可能需要补充step或者vehicle级别的reward， 如果method部分决定要写这里就不用补了
-
-% 中文注释：episode 结束时，每辆完成行程的车辆都有 travel time \(\Delta_i=t_i^{\mathrm{arr}}-\tau_i^{\mathrm{dep}}\)。主要目标是 Definition~2 中的 system-level mean travel time。per-step reward \(r_t=r(s_t,a_t,s_{t+1})\) 是与更低 travel time、更低 route cost 或更快 route progress 对齐的 learning signal，policy return 为 \(J_{\mathrm{RL}}(\pi_\theta)=\mathbb{E}_{\pi_\theta,\mathcal{T}}[\sum_{t=0}^{T-1}\gamma^t r_t]\)。evaluation 将 \(\mathcal{T}_{\mathrm{all}}\) 作为主要指标报告，并将分开的 CAV 和 HDV mean travel times 作为诊断指标。
-
-
+where \(\mathcal{N}^{\mathrm{arr}}\) is the set of arrived vehicles.
+% 中文注释：目标是最小化所有完成车辆的期望平均旅行时间 \(\mathcal{T}_{\mathrm{all}}\)。
