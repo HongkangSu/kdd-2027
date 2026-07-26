@@ -197,7 +197,7 @@ where \(N_{\mathrm{veh}}\) is the episode vehicle population and \(\kappa_g\)
 controls the reward scale.  On real transitions, \(N_{\mathrm{active}}(t)\) is
 read directly from the simulator state.  In imagined rollouts, it is computed
 from the decoded count field, \(N_{\mathrm{active}}(t)=\sum_{u\in N}\widehat
-n_{t,u}\).  Since \(\sum_t N_{\mathrm{active}}(t)\Delta t\) is the total travel
+n_{t,u}\) with \(\widehat n_{t,u}=\kappa(u)\hat c_{t,u}\).  Since \(\sum_t N_{\mathrm{active}}(t)\Delta t\) is the total travel
 time accumulated over an episode, the sum of \(r_t^{\mathrm{global}}\) equals
 \(-\kappa_g\) times the global mean travel time of Definition~7.  The reward
 itself is therefore computed, not learned; the global critic is trained on

@@ -1,25 +1,4 @@
 \section{Method}
-\subsection{Overview}
-
-UrbanDreamer instantiates the world-model formulation of
-Section~\ref{sec:wm-formulation} with four modules.  The Flow Matching
-Dynamics Model learns the transition \(F_\phi\): a traffic encoder maps
-\(X_t\) to \(Z_t\), a decoder grounds the latent state in measurable
-traffic attributes, an action encoder aggregates the sampled route decisions
-into the planned pressure \(\Psi_t^{\mathrm{CAV}}\), and a flow-matching
-model predicts the next latent state.  The HDV Response Module supplies the
-episode-level estimate \(\hat H^{\mathrm{HDV}}\) from preceding episodes.
-The Actor-Critic Learner optimizes the route actor \(\pi_\theta\) in
-imagined rollouts with per-vehicle and global critics.
-
-The modules exchange data as follows.  Simulator episodes populate a replay
-buffer that trains the world model and the response predictor.  Replay states
-initialize imagined rollouts, in which the actor samples routes, the world
-model advances the latent traffic state, and a vehicle wrapper advances
-individual vehicles; the imagined rewards and value targets then update the
-actor and both critics.  Saved actors are finally evaluated in the simulator.
-% 中文注释：UrbanDreamer 用四个模块实例化 Section~\ref{sec:wm-formulation} 的 world model 建模：Flow Matching Dynamics Model 学习 \(F_\phi\)(encoder、decoder、action encoder、flow-matching 预测);HDV Response Module 提供 episode 级 \(\hat H^{\mathrm{HDV}}\);Actor-Critic Learner 在想象 rollout 中优化 \(\pi_\theta\)。数据流：仿真 episode 进入 replay，训练 world model 和 response predictor;replay 状态初始化想象 rollout(actor 选路、world model 推进 latent、wrapper 推进车辆),imagined rewards 和 value targets 更新 actor 与 critics;保存的 actor 最终在 simulator 中评估。
-
 \subsection{Flow Matching Dynamics Model}
 
 % 中文注释：本段是 3.2 的路线图段：先声明设计逻辑——想象训练的质量受限于 transition 的质量，然后按 encoder→conditioning→flow-matching transition→readouts 的顺序给出组件地图，并与 Overview 中的 \(F_\phi\) 记号衔接。写作功能是让读者在进入公式前掌握世界模型的整体结构。

@@ -101,7 +101,7 @@ identically before evaluating every compared method.
 \section{Architecture Details}
 \label{app:architecture}
 
-\paragraph{Encoder and decoder.}  The encoder projects the \(d_x=8\) segment
+\paragraph{Encoder and decoder.}  The encoder projects the segment
 features to \(d_z=64\) and applies two graph convolution layers over the
 row-normalized adjacency matrix (each row sums to one), with messages passed
 along the directed edges of the segment-node graph.  The decoder shares a
