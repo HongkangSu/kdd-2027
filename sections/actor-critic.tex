@@ -163,15 +163,13 @@ stops once the vehicle leaves the active set (Appendix~\ref{app:math-details}).
 
 \subsubsection{Global Critic}
 
-The auxiliary global critic reuses the graph representation \(\bar z_t\)
-together with a decision context \(c_t\) containing the normalized decision
-time and the active CAV and HDV fractions:
+The auxiliary global critic reuses the graph representation \(\bar z_t\):
 \begin{equation}
 \begin{array}{rcl}
 v_t^{\mathrm{global}}
 &=&
 V_\omega^{\mathrm{global}}
-(\bar z_t,c_t).
+(\bar z_t).
 \end{array}
 \end{equation}
 The planned CAV pressure \(\Psi_t^{\mathrm{CAV}}\) conditions only the

@@ -78,8 +78,7 @@ set:
 The same sampled one-hot route is executed by the vehicle, stored in replay,
 and supplied to the transition condition, so \(\Psi_t^{\mathrm{CAV}}\) always
 matches the physical intervention.  The mean normalization states where the
-controlled demand intends to go; the absolute controlled volume enters the
-transition separately through the active-CAV fraction in \(c_t\).
+controlled demand intends to go, not how large it is.
 
 
 % 中文注释：本段给出 planned CAV pressure 的定义：对每辆 active CAV，统计其实际采样的 one-hot route 在 look-ahead window \(\Delta\) 内将进入的 segment 集合，对 active CAV 数取平均（分母用 \(\max(|\mathcal I_t|,1)\) 防空集）。执行、replay 和 transition 条件使用同一个 sampled one-hot，保证 action alignment；绝对控制流量由 \(c_t\) 中的 active-CAV 比例单独进入 transition。
@@ -89,14 +88,11 @@ transition separately through the active-CAV fraction in \(c_t\).
 
 UrbanDreamer learns the latent transition with state-to-state flow
 matching \cite{GiFlow}. The transition condition consists of planned CAV pressure,
-departure demand, HDV influence, and episode context:
+departure demand, and HDV influence:
 \begin{equation}
 \mathcal{C}_t=
-(\Psi_t^{\mathrm{CAV}},D_t,H_t^{\mathrm{HDV}},c_t),
+(\Psi_t^{\mathrm{CAV}},D_t,H_t^{\mathrm{HDV}}).
 \end{equation}
-where \(c_t=[\,t/T,\ |\mathcal{I}_t|/|N^{\mathrm{CAV}}|,\
-|\mathcal{N}_t^{\mathrm{HDV}}|/|N^{\mathrm{HDV}}|\,]\) carries the normalized
-decision time and the active CAV and HDV fractions.
 Instead of regressing \(Z_{t+1}\) directly, the model learns a velocity field
 that transports the current latent representation to the next one under
 \(\mathcal{C}_t\). For a real transition pair \((Z_t,Z_{t+1})\), sample
