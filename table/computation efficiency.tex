@@ -1,18 +1,18 @@
 \begin{table}[t]
   \centering
-  \caption{Computational efficiency on the three urban networks. All runs use a single NVIDIA RTX 3090 GPU. Lower is better; best in bold.}
+  \caption{Computational efficiency on the three urban networks, measured by the training time in hours required to reach the best 20-episode moving-average performance. All runs use a single NVIDIA RTX 3090 GPU. Lower is better; best in bold.}
   \renewcommand{\arraystretch}{1.0}
   \setlength{\tabcolsep}{12pt}
   \begin{tabular}{lccc}
     \toprule
-    \multirow{2}{*}{Method} & \multicolumn{3}{c}{Total Training Time (hours) $\downarrow$} \\
+    \multirow{2}{*}{Method} & \multicolumn{3}{c}{Training Time to Convergence(hours) $\downarrow$} \\
     & Gretz & Ingolstadt & Fontenay \\
     \midrule
-    IQL & 28.8 & 15.3 & 78.2 \\
-    IPPO & 33.0 & 10.4 & 96.1 \\
-    MAPPO & 35.1 & 13.9 & 85.6 \\
-    MAMBA & 37.0 & 10.2 & 78.9 \\
-    \textbf{UrbanDreamer} & \textbf{17.4} & \textbf{5.6} & \textbf{33.3} \\
+    IQL & 29.7 & 15.3 & 72.1 \\
+    IPPO & 32.6 & 10.4 & 96.2 \\
+    MAPPO & 34.6 & 13.9 & 72.7 \\
+    MAMBA & 37.2 & 10.4 & 75.9 \\
+    \textbf{UrbanDreamer} & \textbf{19.0} & \textbf{5.4} & \textbf{36.6} \\
     \bottomrule
   \end{tabular}
   \label{tab:computation-efficiency}
