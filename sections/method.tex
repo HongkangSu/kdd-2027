@@ -20,6 +20,14 @@ Section~\ref{sec:wm-formulation}, alternating real and imagined transitions:
 \end{enumerate}
 % 中文注释：method 总览按四步数据流组织：采集(actor 在 simulator 中选路，episode 与 sampled routes 进 replay)→ 拟合(replay 上更新 world model 和 HDV response predictor)→ 想象(从 replay 状态出发,actor 采样、pressure 条件化 world model、wrapper 推进车辆)→ 优化(imagined rewards 更新 actor 和 critics，最终在 simulator 中评估选 checkpoint)。
 
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=0.8\textwidth]{figure/UrbanDreamer}
+  \caption{Model Architecture}
+  \label{fig:architecture}
+\end{figure*}
+
+
 \subsection{Flow Matching Dynamics Model}
 
 % 中文注释：本段是 3.2 的路线图段：先声明设计逻辑——想象训练的质量受限于 transition 的质量，然后按 encoder→conditioning→flow-matching transition→readouts 的顺序给出组件地图，并与 Overview 中的 \(F_\phi\) 记号衔接。写作功能是让读者在进入公式前掌握世界模型的整体结构。
