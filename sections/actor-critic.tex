@@ -87,7 +87,7 @@ global mean travel time of Definition~7.  Both rewards are therefore computed
 from the decoded readouts rather than learned.
 % 中文注释：global reward 按当前网络中所有车辆累计的通行时间对每个 decision interval 计费：\(r_t^{\mathrm{global}}=-\kappa_g N_{\mathrm{active}}(t)\Delta t/N_{\mathrm{veh}}\)。真实 transition 上 \(N_{\mathrm{active}}(t)\) 直接从 simulator 读取；imagined rollout 中用 decoded count field 求和 \(\sum_u\widehat n_{t,u}\),\(\widehat n_{t,u}=\kappa(u)\hat c_{t,u}\)。由于 \(\sum_t N_{\mathrm{active}}(t)\Delta t\) 是整个 episode 累计的总通行时间，\(r_t^{\mathrm{global}}\) 的求和等于 \(-\kappa_g\) 倍的 Definition~7 global mean travel time。两种 reward 都由 decoded readouts 计算得到，不需要学习。
 
-\subsubsection{Centralized Critics}
+\subsubsection{Critics}
 
 The per-vehicle critic first encodes every observation independently with a
 parameter-shared multilayer perceptron (MLP) \(f_\eta^{\mathrm{enc}}\), and then
