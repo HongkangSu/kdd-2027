@@ -161,7 +161,7 @@ episode-level estimate \(\hat H^{\mathrm{HDV}}\) from preceding episodes.
 The Actor-Critic Learner optimizes the route actor \(\pi_\theta\) in
 imagined rollouts with per-vehicle and global critics.
 
-The modules exchange data as follows.  Simulator episodes populate a replay
+Together, these modules form the following training loop.  Simulator episodes populate a replay
 buffer that trains the world model and the response predictor.  Replay states
 initialize imagined rollouts, in which the actor samples routes, the world
 model advances the latent traffic state, and a vehicle wrapper advances
