@@ -64,6 +64,13 @@ Table~\ref{tab:overall-performance} reports final routing quality on the three n
 
 \subsection{Ablation}
 
+\begin{figure*}[!t]
+  \centering
+  \includegraphics[width=0.8\linewidth]{figure/efficiency_ablation}
+  \caption{Sample-efficiency ablation on three urban road networks. The training curves compare UrbanDreamer with Actor-Critic (No World Model) over real SUMO environment steps. Higher \(-T_{\mathrm{all}}\) indicates better routing performance.}
+  \label{fig:efficiency_ablation}
+\end{figure*}
+
 We conduct three groups of ablations: component ablation on final routing quality, efficiency ablation isolating world-model imagination, and transition ablation comparing predictive quality across transition models.
 
 \subsubsection{Component Ablation}
@@ -75,13 +82,6 @@ We compare UrbanDreamer with four variants: Actor-Critic removes world-model ima
 Table~\ref{tab:ablation performance} shows that removing any component degrades routing performance on all three networks. Removing world-model imagination causes the largest degradation on Ingolstadt and Fontenay-en-Parisis, while removing the HDV response module is most harmful on Gretz-Armainvilliers. Replacing flow matching with MSE regression also degrades both routing performance and prediction quality (Table~\ref{tab:wm-prediction-ablation}).
 
 \subsubsection{Efficiency Ablation}
-
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=0.8\linewidth]{figure/efficiency_ablation}
-  \caption{Sample-efficiency ablation on three urban road networks. The training curves compare UrbanDreamer with Actor-Critic (No World Model) over real SUMO environment steps. Higher \(-T_{\mathrm{all}}\) indicates better routing performance.}
-  \label{fig:efficiency_ablation}
-\end{figure*}
 
 Figure~\ref{fig:efficiency_ablation} compares UrbanDreamer with Actor-Critic (No World Model) over real environment steps. UrbanDreamer improves substantially faster and stabilizes with fewer steps on all three networks, demonstrating that world-model imagination drives the sample-efficiency gain.
 

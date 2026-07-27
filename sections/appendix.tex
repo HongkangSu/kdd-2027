@@ -124,7 +124,7 @@ the ODE is integrated with \(k=1\) explicit Euler step.  \(M=|N|\) denotes the
 number of segment nodes.
 
 \paragraph{HDV response predictor.}  The predictor is an MLP with input
-\((\bar\Psi_{e-1}^{\mathrm{CAV}},H_{e-1}^{\mathrm{HDV}},\rho_e)\in\mathbb{R}^{2M+1}\),
+\((\bar\Psi_{e-1}^{\mathrm{CAV}},H_{e-1}^{\mathrm{HDV}})\in\mathbb{R}^{2M}\),
 two hidden layers of width 128 with GELU and layer normalization, and a softmax
 output over the \(M\) segment nodes.  It is trained with its own AdamW optimizer
 (learning rate \(2\times10^{-3}\)) on adjacent episode pairs, separately from
@@ -136,6 +136,9 @@ time budget.  It does not enforce explicit vehicle conservation or queue
 spillback against the decoded segment count field; both the wrapper and the
 transition consume the same decoded readout, so vehicle positions and segment
 speeds evolve from a single prediction rather than two independent models.
+The occupancy-integral identity behind the global reward is exact on real
+transitions and approximate in imagination, with the approximation error
+accumulating over the imagination horizon.
 
 \paragraph{Main hyperparameters.}  Imagination horizon \(L_{\mathrm{im}}=8\);
 trace parameter \(\lambda=0.95\); per-vehicle reward scale \(\kappa_r=60\);
