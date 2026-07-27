@@ -59,7 +59,12 @@ r_{i,t}^{\mathrm{veh}}
 -\delta_{i,t}/\kappa_r,
 \end{array}
 \end{equation}
-where \(\kappa_r\) controls the reward scale.
+where \(\kappa_r\) controls the reward scale.  The reward saturates at
+\(-\Delta/\kappa_r\) beyond one decision interval, but the return stays
+action-dependent: faster routes make the wrapper remove the vehicle from
+the active set earlier, ending the accumulation, and the final interval is
+charged by the actual remaining time, so the per-vehicle return sums to the
+negative imagined travel time.
 
 The global reward charges each decision interval by the travel time
 accumulated by all vehicles present in the network:

@@ -31,7 +31,7 @@ Section~\ref{sec:wm-formulation}, alternating real and imagined transitions:
 \begin{figure*}[t]
   \centering
   \includegraphics[width=0.8\textwidth]{figure/UrbanDreamer}
-  \caption{Overview of UrbanDreamer.}
+  \caption{Overview of UrbanDreamer. Simulator episodes populate a replay buffer that trains the flow-matching world model and the HDV response predictor; in imagined rollouts, the actor samples routes, a vehicle wrapper advances each CAV under the decoded travel times, and per-vehicle and global critics update the policy.}
   \label{fig:architecture}
 \end{figure*}
 
