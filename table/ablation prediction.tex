@@ -2,7 +2,8 @@
   \centering
   \caption{Transition ablation: 8-step autoregressive rollout error of frozen world-model checkpoints, as MAE of normalized speed and capacity-normalized vehicle count. Lower is better.}
   \renewcommand{\arraystretch}{1.0}
-  \resizebox{\columnwidth}{!}{%
+  \scriptsize
+  \setlength{\tabcolsep}{4pt}
     \begin{tabular}{lcccc}
       \toprule
       \multirow{2}{*}{Network} & \multicolumn{2}{c}{Speed MAE $\downarrow$} & \multicolumn{2}{c}{Vehicle Count MAE $\downarrow$} \\
@@ -13,7 +14,6 @@
       Gretz-Armainvilliers & \textbf{0.274} & 0.473 & \textbf{0.104} & 0.125 \\
       Fontenay-en-Parisis & \textbf{0.209} & 0.233 & \textbf{0.107} & 0.112 \\
       \bottomrule
-    \end{tabular}%
-  }
+    \end{tabular}
   \label{tab:wm-prediction-ablation}
 \end{table}
