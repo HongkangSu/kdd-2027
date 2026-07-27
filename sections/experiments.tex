@@ -11,11 +11,11 @@ We evaluate UrbanDreamer on three urban road networks from the RouteRL and URB b
 
 \subsubsection{Baselines}
 
-We compare UrbanDreamer with two heuristic methods and four MARL methods. Free-flow greedy selects the candidate route with the minimum sum of free-flow edge travel times, whereas live-current greedy selects the route with the minimum sum of current edge travel-time estimates. The learning-based baselines include IQL \cite{iql}, IPPO \cite{ippo}, MAPPO \cite{mappo}, and MAMBA \cite{mamba}. The first three represent independent value learning, decentralized policy optimization, and centralized training with decentralized execution, respectively. MAMBA is a multi-agent model-based RL method that learns a latent world model in the Dreamer style, and therefore serves as the direct world-model baseline in our comparison. All methods share the same route-candidate interface, departure demand, and disruption schedule, are trained under the same simulation protocol until convergence, and are evaluated on identical episodes (implementation details in Appendix~\ref{app:baselines}); the environment-step counts reported below cover each method's complete training, including UrbanDreamer's warm-up data collection.
+We compare UrbanDreamer with two heuristic methods and four MARL methods. Free-flow greedy selects the candidate route with the minimum sum of free-flow edge travel times, whereas live-current greedy selects the route with the minimum sum of current edge travel-time estimates. The learning-based baselines include IQL \cite{iql}, IPPO \cite{ippo}, MAPPO \cite{mappo}, and MAMBA \cite{mamba}. The first three represent independent value learning, decentralized policy optimization, and centralized training with decentralized execution, respectively. MAMBA is a multi-agent model-based RL method that learns a latent world model in the Dreamer style, and therefore serves as the direct world-model baseline in our comparison. All methods share the same route-candidate interface, departure demand, and disruption schedule, are trained under the same simulation protocol until convergence, and are evaluated on identical episodes (implementation details in Appendix~\ref{app:baselines}); the environment-step counts reported below measure each method's online training interactions.
 
 \subsubsection{Evaluation Metrics}
 
-All methods are evaluated using the same route candidates, traffic demand, disruption settings, simulation horizon, and initial HDV state. The simulation horizon is set long enough for every vehicle to reach its destination before the episode ends. We use the global mean travel time \(T_{\mathrm{all}}\) as the primary metric and additionally report the CAV mean travel time \(T_{\mathrm{CAV}}\), the added cost \(C_{\mathrm{ALL}}\) relative to the pre-CAV reference state, and the 95th-percentile travel time \(T_{\mathrm{P95}}\).
+All methods are evaluated using the same route candidates, traffic demand, disruption settings, simulation horizon, and initial HDV state. The simulation horizon is set long enough for every vehicle to reach its destination before the episode ends. We use the global mean travel time \(T_{\mathrm{all}}\) as the primary metric and additionally report the CAV mean travel time \(T_{\mathrm{CAV}}\), the added cost \(C_{\mathrm{ALL}}\) relative to the pre-CAV reference state, measured on training episodes and therefore defined only for the learning-based methods, and the 95th-percentile travel time \(T_{\mathrm{P95}}\).  A negative \(C_{\mathrm{ALL}}\) indicates that the learned routing reduces the cost below the pre-CAV reference.
 
 
 \subsection{Efficiency and Scalability}
@@ -24,7 +24,7 @@ We evaluate UrbanDreamer in terms of sample efficiency, computational efficiency
 
 \subsubsection{Sample Efficiency}
 
-We measure sample efficiency by the number of real SUMO environment steps each method requires to converge, where convergence is defined as reaching the best 20-episode moving-average \(T_{\mathrm{all}}\) during training. For UrbanDreamer, this count includes the SUMO environment steps used for warm-up data collection.
+We measure sample efficiency by the number of real SUMO environment steps each method requires to converge, where convergence is defined as the episode at which the 20-episode moving-average \(T_{\mathrm{all}}\) first reaches its best value during training, and the same criterion is applied identically to every method.
 
 \input{table/sample efficiency}
 

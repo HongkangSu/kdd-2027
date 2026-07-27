@@ -34,9 +34,9 @@ lambda returns.  The actor is not updated on real simulator returns.
 At designated episodes, UrbanDreamer saves the actor, critics, world model,
 and response predictor together.  After training, each saved actor is
 evaluated in the simulator with the same masked stochastic route sampling used
-in collection, and the checkpoint with the lowest global mean travel time is
-returned.
-% 中文注释：在指定 episodes 保存全部模型。训练结束后，每个 saved actor 用与采集相同的 masked stochastic 采样在 simulator 中评估，返回 global mean travel time 最低的 checkpoint。
+in collection, and the actor from the final online episode, at which the
+moving-average performance has converged, is reported.
+% 中文注释：在指定 episodes 保存全部模型。训练结束后，每个 saved actor 用与采集相同的 masked stochastic 采样在 simulator 中评估，报告最后一个 online episode（此时 moving-average 已收敛）的 actor。
 
 \begin{algorithm}[t]
 \caption{Online training of UrbanDreamer}
@@ -54,6 +54,6 @@ returned.
     \STATE Update actor and critics by lambda returns
   \ENDFOR
 \ENDFOR
-\STATE Evaluate saved actors in the simulator; return the best
+\STATE Evaluate saved actors in the simulator; report the final checkpoint
 \end{algorithmic}
 \end{algorithm}

@@ -32,13 +32,14 @@ for all networks.
 \end{table}
 
 \paragraph{Training and evaluation protocol.}  The world-model warm-up
-collects exploratory episodes in which every CAV follows an
-\(\epsilon\)-greedy routing rule (\(\epsilon=0.4\)).  UrbanDreamer's online
-stage runs 200 episodes per network, saving checkpoints every 25 episodes,
-while the baselines are trained for 500 episodes under the same
-protocol.  Each checkpoint is then evaluated on 5 held-out episodes with the
-same masked stochastic route sampling used in collection.  All runs use a
-single NVIDIA RTX 3090 GPU.
+collects 50 exploratory episodes in which every CAV follows an
+\(\epsilon\)-greedy routing rule (\(\epsilon=0.4\)).  All methods are trained
+for 500 episodes per network under the same protocol, saving checkpoints
+every 25 episodes.  Each checkpoint is then evaluated with
+the same masked stochastic route sampling used in collection, running enough
+held-out episodes for the HDV day-to-day route-choice probabilities to
+stabilize, and the reported results correspond to the final checkpoint after
+convergence.  All runs use a single NVIDIA RTX 3090 GPU.
 
 \paragraph{Toy network.}  The scalability profile additionally includes a
 small synthetic Toy network with 24 registered road segments and the same
@@ -73,7 +74,9 @@ each vehicle slot (three hidden layers of width 64).
 \paragraph{MAMBA.}  A Dreamer-style multi-agent model-based baseline using
 the upstream architecture defaults: a per-agent discrete latent state model
 (\(32\times32\) categoricals) with transformer dynamics (3 layers, 8 heads),
-imagination horizon 15, and PPO clip \(0.075\).  Unlike UrbanDreamer, MAMBA's
+imagination horizon 15, and PPO clip \(0.075\).  Its world model is first
+warmed up on 41 exploratory episodes before online training.  Unlike
+UrbanDreamer, MAMBA's
 learned model is agent-centric: it does not model the segment-level traffic
 field or the HDV demand, and its world model, actor, and critic are trained
 from the same online episodes as the other baselines.
