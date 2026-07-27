@@ -3,17 +3,16 @@
   \caption{UrbanDreamer training-time breakdown by stage in hours, summing to Table~\ref{tab:computation-efficiency}.}
   \renewcommand{\arraystretch}{1.0}
   \setlength{\tabcolsep}{6pt}
-    \begin{tabular}{lrrr}
+    \begin{tabular}{lccc}
       \toprule
-      Training stage & Gretz (h) & Ingolstadt (h) & Fontenay (h) \\
+      Stage & Gretz & Ingolstadt & Fontenay \\
       \midrule
-      warm-up collection & 3.816 & 1.129 & 5.273 \\
+      Warm-up collection & 3.816 & 1.129 & 5.273 \\
       Initial fit & 5.228 & 1.185 & 12.117 \\
       SUMO simulation & 7.009 & 1.349 & 15.659 \\
       Model updates & 0.480 & 0.043 & 0.292 \\
       Imagined actor-critic & 2.389 & 1.699 & 3.238 \\
-      \midrule
-      Component-summed training total & \textbf{18.922} & \textbf{5.405} & \textbf{36.579} \\
+      \textbf{Total} & \textbf{18.922} & \textbf{5.405} & \textbf{36.579} \\
       \bottomrule
     \end{tabular}
   \label{tab:online-wm-training-stage-time}
