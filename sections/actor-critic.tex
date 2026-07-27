@@ -4,7 +4,9 @@ This subsection realizes the microscopic level of
 Section~\ref{sec:wm-formulation} and its two reward channels: each imagined
 step produces a per-vehicle travel-time reward and a network-level global
 reward, two centralized critics estimate the corresponding returns, and the
-actor is updated from their combined advantage.  The per-vehicle signal is
+actor is updated from their combined advantage.  This dense credit is
+needed because the objective of Definition~7 is available only after a
+completed episode.  The per-vehicle signal is
 the primary actor-learning signal, while the global critic supplies an
 auxiliary aggregate signal.
 
@@ -23,7 +25,9 @@ consume the same decoded readout, vehicle positions and the segment traffic
 field evolve from a single prediction rather than two independent state
 estimates.  Departing vehicles are added, arrived vehicles are removed, and
 the remaining CAVs form \(\mathcal{I}_{t+1}^{\mathrm{im}}\), which alone
-contribute actor samples, rewards, and bootstrap values.
+contribute actor samples, rewards, and bootstrap values.  The wrapper keeps
+vehicle identity explicit without requiring the graph-level world model to
+predict per-vehicle terminal variables.
 
 \subsubsection{Imagined Rewards}
 
@@ -73,7 +77,6 @@ rollouts it is summed from the decoded count field,
 accumulated over an episode, the sum of \(r_t^{\mathrm{global}}\) equals
 \(-\kappa_g\) times the objective of Definition~7.  Both rewards are
 computed from decoded readouts rather than learned.
-% 中文注释：per-vehicle reward 由 \(\delta_{i,t}=\min(\Delta,\widehat T_{i,t}^{\mathrm{rem}})\)、\(r_{i,t}^{\mathrm{veh}}=-\delta_{i,t}/\kappa_r\) 给出；global reward 的求和等于 \(-\kappa_g\) 倍 Definition~7 目标。两种 reward 都由 decoded readouts 计算。
 
 \subsubsection{Critics}
 
@@ -114,7 +117,6 @@ aggregate congestion effects that no single CAV observation contains.  It is
 trained from the epoch-level lambda return
 (Appendix~\ref{app:math-details}), and its detached residual enters every
 active CAV's actor advantage below.
-% 中文注释：per-vehicle critic：shared MLP 编码 + active set 内 self-attention，按 vehicle identity 连接 lambda returns。global critic 读 \(\bar z_t\)，action-independent，其 detached residual 进入 actor advantage。
 
 \subsubsection{Route Actor and Policy Update}
 
@@ -166,4 +168,3 @@ credit.  The actor is optimized with the standard clipped PPO surrogate
 with entropy regularization (Appendix~\ref{app:math-details}); the global
 critic thus affects the actor through \(A_t^{\mathrm{global}}\) rather than
 only through a critic loss.
-% 中文注释：actor 对候选做 masked softmax；advantage 组合 \(A^{\mathrm{actor}}=A^{\mathrm{veh}}+\alpha_gA^{\mathrm{global}}\)，标准 PPO clip + entropy。global critic 通过 \(A^{\mathrm{global}}\) 直接进入 actor objective。
