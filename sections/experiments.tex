@@ -31,7 +31,7 @@ Figure~\ref{fig:sample-efficiency-training-proxy} shows the training curves, and
 \begin{figure*}[t]
   \centering
   \includegraphics[width=0.8\textwidth]{figure/sample_efficiency.pdf}
-  \caption{Training curves over real SUMO environment steps on the three urban networks. UrbanDreamer reaches its best moving-average $T_{\mathrm{all}}$ with 69.8\%--77.3\% fewer steps than the most sample-efficient baseline on each network.}
+  \caption{Training curves over real SUMO environment steps on the three urban networks.}
   \label{fig:sample-efficiency-training-proxy}
 \end{figure*}
 
@@ -49,7 +49,7 @@ Table~\ref{tab:computation-efficiency} reports the training time to convergence 
 \begin{figure}[t]
   \centering
   \includegraphics[width=1.0\linewidth]{figure/scalability_training_time}
-  \caption{Total training time across networks of increasing size. The horizontal axis contains four discrete benchmarks ordered by road-segment count: Toy (24), Ingolstadt (853), Gretz-Armainvilliers (4,485), and Fontenay-en-Parisis (7,585). Toy is a small synthetic network used only as a pilot point in this profile. Connecting segments are visual guides rather than interpolation over a continuous scale.}
+  \caption{Total training time across networks ordered by road-segment count, with the 24-segment synthetic Toy network included only as a pilot point.}
   \label{fig:scalability_training_time}
 \end{figure}
 
@@ -67,7 +67,7 @@ Table~\ref{tab:overall-performance} reports final routing quality on the three n
 \begin{figure*}[!t]
   \centering
   \includegraphics[width=0.8\linewidth]{figure/efficiency_ablation}
-  \caption{Sample-efficiency ablation on three urban road networks. The training curves compare UrbanDreamer with Actor-Critic (No World Model) over real SUMO environment steps. Higher \(-T_{\mathrm{all}}\) indicates better routing performance.}
+  \caption{Training curves of UrbanDreamer and Actor-Critic (No World Model) over real SUMO environment steps; higher \(-T_{\mathrm{all}}\) is better.}
   \label{fig:efficiency_ablation}
 \end{figure*}
 

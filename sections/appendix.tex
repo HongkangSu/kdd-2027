@@ -208,17 +208,8 @@ Global-reward scale \(\kappa_g\)
 & 0.5 & 1.0 & 2.0 & \(-\)0.665\% & \(-\)0.264\% & 0.665\% \\
 Global-advantage weight \(\alpha_g\)
 & 0.5 & 1.0 & 2.0 & \(-\)0.257\% & \(-\)0.233\% & 0.257\% \\
-Reconstruction weight \(\lambda_{\mathrm{rec}}\)
-& 0.1 & 0.2 & 0.4 & \(-\)0.255\% & +0.501\% & --\(^{\dagger}\) \\
 \bottomrule
 \end{tabular}
-\vspace{2pt}
-
-\begin{minipage}{\columnwidth}\scriptsize\raggedright
-\(^{\dagger}\)This probe also changes the real-action executor (argmax
-instead of masked sampling) and the initialization checkpoint; its
-deviation is therefore not attributed to the named loss weight alone.
-\end{minipage}
 \end{table}
 
 \section{Case Study and Visualization}
@@ -242,7 +233,7 @@ with the per-segment weighting of the flow-matching loss.
 \begin{figure}
     \centering
     \includegraphics[width=0.75\linewidth]{figure/ingolstadt_construction.pdf}
-    \caption{World-model rollout reconstruction on Ingolstadt. Top: speeds decoded from the predicted latent state. Bottom: simulator-observed segment speeds. Columns: prediction horizons \(h=0\) to \(h=4\).}
+    \caption{World-model rollout on Ingolstadt: speeds decoded from the predicted latent state (top) versus simulator-observed segment speeds (bottom) at horizons \(h=0\) to \(h=4\).}
     \label{fig:ingolstadt-construction}
 \end{figure}
 
