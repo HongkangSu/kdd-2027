@@ -2,7 +2,20 @@
 
 We presented UrbanDreamer, a world-model-based MARL framework for mixed-autonomy dynamic routing. UrbanDreamer connects vehicle-level route choices with graph-level traffic dynamics through planned CAV pressure, models aggregate HDV responses, and optimizes CAV policies through imagined rollouts with complementary vehicle-level and global critics. Experiments in three SUMO urban networks show that UrbanDreamer learns effective routing policies with substantially fewer real environment steps and less training time than MARL baselines, and attains the lowest global mean travel time on two of the three networks. The ablation results further demonstrate the contributions of world-model imagination and the main model components, while the transition analysis shows that flow matching improves multi-step traffic prediction over deterministic regression. Future work will investigate uncertainty-aware imagination, adaptation across traffic demands and road networks, and deployment under real-world traffic observations.
 
-\section{Limitations}
-Our evaluation is conducted in microscopic simulation, and policies are
-trained and evaluated separately on each network, so transfer across networks
-and demand shifts remains open.
+\section{Limitations and Ethical Considerations}
+Our evaluation is conducted entirely in microscopic simulation: policies are
+trained and evaluated separately on each network under a fixed CAV
+penetration rate and a deterministic incident schedule, so transfer across
+networks, demands, and human behaviors
+remains open and real-world validation is left to future work.  The study
+involves no human subjects or personally identifiable data, so privacy and
+consent concerns do not arise.  The main ethical risk arises at
+deployment: a policy optimized for system-level travel time may shift
+congestion burden toward specific neighborhoods or user groups, and should
+only be deployed with fairness auditing and human oversight.
+
+\section{Generative AI Usage}
+Generative AI tools were used to assist with language polishing and editing
+of the manuscript, and to assist with implementation tasks such as drafting
+and debugging experiment code.  The authors reviewed all AI-assisted text
+and code and take full responsibility for the entire content of the paper.

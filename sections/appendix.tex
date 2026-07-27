@@ -154,6 +154,70 @@ world-model updates and imagination together cost less than the initial fit.
 
 \input{sections/mathematical details}
 
+\section{Additional Experiments}
+\label{app:additional-experiments}
+
+\subsection{Multi-Seed Evaluation}
+\label{app:multi-seed}
+
+We replicate the full training pipeline on all three networks with three
+independent seeds (42, 43, and 44); the across-seed standard deviation of
+final performance is 0.0651, 0.0345, and 0.0194 minutes on
+Gretz-Armainvilliers, Ingolstadt, and Fontenay-en-Parisis, respectively,
+confirming that the mainline results are stable to seed variation.
+
+\subsection{Parameter Sensitivity}
+\label{app:parameter-sensitivity}
+
+We probe the sensitivity of UrbanDreamer to its main hyperparameters.  Each
+factor is varied individually to a low and a high value around the mainline
+default, with all other settings unchanged, and the model is retrained under
+the same protocol as the main experiments.
+Table~\ref{tab:parameter-sensitivity} reports the relative change in global
+mean travel time \(T_{\mathrm{all}}\) with respect to the default mainline.
+Across all probed factors, the deviations remain below \(0.7\%\), indicating
+that UrbanDreamer does not rely on finely tuned hyperparameters.
+
+\begin{table}[h]
+\centering
+\caption{Parameter sensitivity.
+Values are the relative change in global mean travel time with respect to
+the default mainline, in percent; a positive value indicates worse (longer)
+travel time.}
+\label{tab:parameter-sensitivity}
+\renewcommand{\arraystretch}{1.0}
+\scriptsize
+\setlength{\tabcolsep}{3.2pt}
+\begin{tabular}{lcccccc}
+\toprule
+Factor & Low & Default & High &
+\(\Delta_{\mathrm{low}}\) &
+\(\Delta_{\mathrm{high}}\) &
+\(\max|\Delta|\) \\
+\midrule
+Imagination horizon \(L_{\mathrm{im}}\)
+& 4 & 8 & 12 & +0.081\% & +0.043\% & 0.081\% \\
+Return trace \(\lambda\)
+& 0.90 & 0.95 & 1.00 & +0.043\% & \(-\)0.056\% & 0.056\% \\
+Per-vehicle reward scale \(\kappa_r\)
+& 30 & 60 & 120 & \(-\)0.134\% & \(-\)0.114\% & 0.134\% \\
+Global-reward scale \(\kappa_g\)
+& 0.5 & 1.0 & 2.0 & \(-\)0.665\% & \(-\)0.264\% & 0.665\% \\
+Global-advantage weight \(\alpha_g\)
+& 0.5 & 1.0 & 2.0 & \(-\)0.257\% & \(-\)0.233\% & 0.257\% \\
+Reconstruction weight \(\lambda_{\mathrm{rec}}\)
+& 0.1 & 0.2 & 0.4 & \(-\)0.255\% & +0.501\% & --\(^{\dagger}\) \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+
+\begin{minipage}{\columnwidth}\scriptsize\raggedright
+\(^{\dagger}\)This probe also changes the real-action executor (argmax
+instead of masked sampling) and the initialization checkpoint; its
+deviation is therefore not attributed to the named loss weight alone.
+\end{minipage}
+\end{table}
+
 \section{Case Study and Visualization}
 
 Figures~\ref{fig:ingolstadt-construction}, \ref{fig:gretz-construction}, and

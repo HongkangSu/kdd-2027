@@ -1,4 +1,5 @@
 \section{Method}
+\label{sec:method}
 \subsection{Overview}
 
 UrbanDreamer follows the world-model formulation of
@@ -10,13 +11,9 @@ Section~\ref{sec:wm-formulation}, alternating real and imagined transitions:
 
   \item \textbf{Fit.}
   The world model and the HDV response predictor are updated on replay
-  transitions. Let
+  transitions, giving the learned transition
+  \(\hat Z_{t+1}=F_\phi(Z_t;C_t)\) with
   \(C_t=(\Psi_t^{\mathrm{CAV}},D_t,\hat H^{\mathrm{HDV}})\).
-  The learned transition is
-  \begin{equation}
-    \hat Z_{t+1}=F_\phi(Z_t;C_t).
-    \label{eq:overview-world-transition}
-  \end{equation}
 
   \item \textbf{Imagine.}
   From a replay state, the actor samples routes, the pressure
@@ -42,37 +39,29 @@ Section~\ref{sec:wm-formulation}, alternating real and imagined transitions:
 \subsection{Flow Matching Dynamics Model}
 
 
-
 \subsubsection{Traffic Encoder and Decoder}
 
-Given the traffic field \(X_t\), a stack of graph convolution layers with
-residual connections and layer normalization produces the latent traffic
-representation \(Z_t\), whose row \(z_{t,u}\) summarizes segment \(u\)
-together with its graph neighborhood (Appendix~\ref{app:math-details}).  A
-decoder maps each \(z_{t,u}\) back to the dynamic segment attributes
-\([\hat c_{t,u},\hat v_{t,u}]\) and is trained jointly with the dynamics
-model with a reconstruction loss on observed traffic fields
-(Appendix~\ref{app:math-details}).  In actor-critic learning, the decoder
-also provides the travel-time and count readouts for rewards and value
-targets.
+A stack of graph convolution layers with residual connections and layer
+normalization maps the traffic field \(X_t\) to the latent representation
+\(Z_t\), whose row \(z_{t,u}\) summarizes segment \(u\) together with its
+graph neighborhood (Appendix~\ref{app:math-details}).  A decoder maps each
+\(z_{t,u}\) back to the dynamic segment attributes
+\([\hat c_{t,u},\hat v_{t,u}]\), trained jointly with the dynamics model
+through a reconstruction loss on observed traffic fields, and provides the
+travel-time and count readouts for rewards and value targets in actor-critic
+learning.
 
 
 \subsubsection{Action Encoder}
 
 The transition model evolves graph-level representations, but decisions are
 made at the vehicle level.  We therefore project the realized one-hot CAV
-route decisions onto the segment nodes that those routes are expected to
-visit, producing a graph-level planned pressure field
-\(\Psi_t^{\mathrm{CAV}}\) defined on the same segment set as \(X_t\) and
-\(Z_t\).
-
-
-For active CAV \(i\), let \(\mathrm{Seg}_{\Delta}(P^k_{i,t})\subseteq
-N\)
-denote the segment nodes that vehicle \(i\) would enter within the
-look-ahead window \(\Delta\) if it followed candidate route
-\(P^k_{i,t}\). The planned pressure averages route indicators over the active
-set:
+route decisions onto the segment nodes those routes are expected to visit,
+producing a planned pressure field \(\Psi_t^{\mathrm{CAV}}\) defined on the
+same segment set as \(X_t\) and \(Z_t\).  For active CAV \(i\), let
+\(\mathrm{Seg}_{\Delta}(P^k_{i,t})\subseteq N\) denote the segments it would
+enter within the look-ahead window \(\Delta\) under candidate \(P^k_{i,t}\);
+the planned pressure averages route indicators over the active set:
 \begin{equation}
 \begin{array}{rcl}
 \Psi_t^{\mathrm{CAV}}(u)
@@ -94,58 +83,50 @@ set:
 \end{array}
 \end{equation}
 The same sampled one-hot route is executed by the vehicle, stored in replay,
-and supplied to the transition condition, so \(\Psi_t^{\mathrm{CAV}}\) always
-matches the physical intervention.  The mean normalization states where the
-controlled demand intends to go, not how large it is.
+and supplied to the transition condition, so \(\Psi_t^{\mathrm{CAV}}\)
+always matches the physical intervention.  The mean normalization states
+where the controlled demand intends to go, not how large it is.
 
 
 
 \subsubsection{State-to-State Flow Matching}
 
 UrbanDreamer learns the latent transition with state-to-state flow
-matching \cite{GiFlow}. The transition condition consists of planned CAV pressure,
-departure demand, and HDV influence:
+matching \cite{GiFlow} under the transition condition
 \begin{equation}
 \mathcal{C}_t=
 (\Psi_t^{\mathrm{CAV}},D_t,H_t^{\mathrm{HDV}}).
 \end{equation}
-Instead of regressing \(Z_{t+1}\) directly, the model learns a velocity field
-that transports the current latent representation to the next one under
-\(\mathcal{C}_t\). For a real transition pair \((Z_t,Z_{t+1})\), sample
+Instead of regressing \(Z_{t+1}\) directly, the model learns a velocity
+field that transports the current latent representation to the next one.
+For a real transition pair \((Z_t,Z_{t+1})\), sample
 \(\tau\sim\mathcal{U}(0,1)\) and define
 \begin{equation}
 \begin{array}{rcl}
 x_\tau &=& (1-\tau)Z_t+\tau Z_{t+1},\\
-\nu_{t,\tau} &=& \frac{dx_\tau}{d\tau} = Z_{t+1}-Z_t. 
+\nu_{t,\tau} &=& \frac{dx_\tau}{d\tau} = Z_{t+1}-Z_t.
 \end{array}
 \end{equation}
-The previous latent traffic representation \(Z_t\) is the flow
-source, and \(\nu_{t,\tau}\) is the target velocity.  This is a deterministic
-state-to-state transport based on rectified
-flow \cite{lipman2023flow,liu2023rectified}: the straight interpolation path
-keeps multi-step imagined rollouts stable, and we do not claim multimodal
-generative modeling of \(Z_{t+1}\).
-
+The previous latent representation \(Z_t\) is the flow source, and
+\(\nu_{t,\tau}\) is the target velocity.  This deterministic state-to-state
+transport is based on rectified flow \cite{lipman2023flow,liu2023rectified}:
+the straight interpolation path keeps multi-step imagined rollouts stable,
+and we do not claim multimodal generative modeling of \(Z_{t+1}\).
 
 We parameterize the velocity predictor \(\nu_\phi\) with a block-causal
-transformer\cite{vaswani2017attention} over road segment traffic representations. At each decision
-epoch, the network receives the interpolated representation \(x_\tau\), time condition \(\tau\), and transition condition \(\mathcal{C}_t\). The transformer block mixes information through
-causal attention over previous traffic representations. A linear output head
-maps the resulting representations to the velocity estimate:
+transformer \cite{vaswani2017attention} over segment traffic
+representations, which receives the interpolated representation \(x_\tau\),
+the time condition \(\tau\), and the transition condition \(\mathcal{C}_t\),
+mixes information through causal attention over previous traffic
+representations, and outputs the velocity estimate
 \begin{equation}
 \hat\nu_{t,\tau}=\nu_\phi(x_\tau,\tau,\mathcal{C}_t).
 \end{equation}
+Because most road segments are empty most of the time, the training loss
+applies bounded per-segment weights \(w_{t,u}\) that emphasize occupied and
+congested segments (Appendix~\ref{app:math-details}).
 
-
-
-Because most road segments are empty most of the time, the training
-loss applies per-segment weights \(w_{t,u}\) that emphasize
-occupied and congested segments while bounding the maximum weight to prevent
-degenerate focusing (Appendix~\ref{app:math-details}).
-
-
-
-At imagination time, \(Z_{t+1}\) is unavailable, the next latent traffic representation is obtained by
+At imagination time, the next latent traffic representation is obtained by
 integrating the learned velocity field with \(k\) explicit Euler steps:
 \begin{equation}
 \begin{array}{rcl}
@@ -158,34 +139,31 @@ Z_t+\int_0^1
 \end{equation}
 Multi-step imagination repeatedly applies this one-step transition, using
 each predicted \(\hat Z_{t+1}\) as the next source representation.
-% 中文注释：本段说明想象阶段的推理方式：从 \(x_0=Z_t\) 出发对速度场做 ODE 积分得到 \(\hat Z_{t+1}\)；多步想象反复应用该一步 transition，把每次预测作为下一步的流源。写作功能：闭合 3.2 的训练—推理回路。
+% 中文注释：想象阶段从 \(x_0=Z_t\) 对速度场做 ODE 积分；多步想象反复应用一步 transition。
 
 
 \subsection{HDV Response Module}
 
-HDVs choose routes at departure time according to their own travel intent, and
-adapt across episodes to the congestion that CAV routing induces.  UrbanDreamer
-models the two time scales of this interaction separately.  Within an episode,
-the learned transition responds to the current CAV pressure
-\(\Psi_t^{\mathrm{CAV}}\) at every decision epoch.  Across episodes, human
-adaptation is slower than a single route decision, so it is represented as an
-episode-level response field over road segments that is predicted from the
-previous episode and held fixed within each imagined episode.  Imagined
-rollouts therefore optimize against step-level counterfactual traffic
-responses, while day-to-day HDV demand shifts are learned from real simulator
-episodes rather than simulated inside imagination.
-
+HDVs choose routes at departure time and adapt across episodes to the
+congestion that CAV routing induces.  UrbanDreamer models the two time
+scales separately.  Within an episode, the learned transition responds to
+the current CAV pressure \(\Psi_t^{\mathrm{CAV}}\) at every decision epoch.
+Across episodes, slower human adaptation is represented as an episode-level
+response field over road segments, predicted from the previous episode and
+held fixed within each imagined episode.  Imagined rollouts therefore
+optimize against step-level counterfactual traffic responses, while
+day-to-day HDV demand shifts are learned from real simulator episodes
+rather than simulated inside imagination.
 
 The HDV influence is represented as a road-segment distribution
-\(H^{\mathrm{HDV}}\).  For an observed episode, the supervision target
-\(H^\star\) aggregates the observed HDV background field over time and
-normalizes it across road segments.  The response predictor is an MLP with a
-softmax output that estimates \(\hat H_e^{\mathrm{HDV}}\) from the previous
-episode's CAV pressure summary and HDV background, trained with a soft-label
-cross-entropy loss; it and the base world model use separate optimizers, so
-HDV adaptation is learned without treating HDVs as controllable
-(equations in Appendix~\ref{app:math-details}).
-
+\(H^{\mathrm{HDV}}\): the supervision target \(H^\star\) aggregates the
+observed HDV background field over an episode and normalizes it across
+segments, and an MLP with a softmax output estimates
+\(\hat H_e^{\mathrm{HDV}}\) from the previous episode's CAV pressure summary
+and HDV background.  The predictor is trained with a soft-label
+cross-entropy loss and an optimizer separate from the world model, so HDV
+adaptation is learned without treating HDVs as controllable
+(Appendix~\ref{app:math-details}).
 
 
 
