@@ -42,7 +42,8 @@ Section~\ref{sec:wm-formulation}, alternating real and imagined transitions:
 \subsubsection{Traffic Encoder and Decoder}
 
 A stack of graph convolution layers with residual connections and layer
-normalization maps the traffic field \(X_t\) to the latent representation
+normalization maps the traffic field \(X_t\) (Eq.~\ref{eq:traffic-field})
+to the latent representation
 \(Z_t\), whose row \(z_{t,u}\) summarizes segment \(u\) together with its
 graph neighborhood (Appendix~\ref{app:math-details}).  A decoder maps each
 \(z_{t,u}\) back to the dynamic segment attributes

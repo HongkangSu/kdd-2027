@@ -18,16 +18,9 @@ a decision epoch \(t_{\mathrm{start}}\), encode
 each vehicle's current segment, destination, route suffix, and arrival
 status from the same epoch.  At each imagined epoch, the actor selects a
 route and the decoder recovers the segment speed \(\widehat v_{t,u}\),
-giving the predicted segment travel time
-\begin{equation}
-\begin{array}{rcl}
-\widehat\tau_t(u)
-&=&
-\displaystyle
-\frac{\ell(u)}{\widehat v_{t,u}}.
-\end{array}
-\end{equation}
-A deterministic vehicle wrapper advances each vehicle along its route by
+giving the predicted segment travel time of Eq.~\ref{eq:micro-advance}.
+A deterministic vehicle wrapper (\(\mathrm{Advance}\) in
+Eq.~\ref{eq:micro-advance}) advances each vehicle along its route by
 consuming these travel times in route order, while the learned transition
 predicts \(Z_{t+1}\); because the wrapper and the transition consume the
 same decoded readout, vehicle positions and the segment traffic field evolve
