@@ -41,7 +41,8 @@ Section~\ref{sec:wm-formulation}, alternating real and imagined transitions:
 
 \subsubsection{Traffic Encoder and Decoder}
 
-A stack of graph convolution layers with residual connections and layer
+At the macroscopic level of Section~\ref{sec:wm-formulation}, a stack of
+graph convolution layers with residual connections and layer
 normalization maps the traffic field \(X_t\) (Eq.~\ref{eq:traffic-field})
 to the latent representation
 \(Z_t\), whose row \(z_{t,u}\) summarizes segment \(u\) together with its
@@ -55,10 +56,11 @@ learning.
 
 \subsubsection{Action Encoder}
 
-The transition model evolves graph-level representations, but decisions are
-made at the vehicle level.  We therefore project the realized one-hot CAV
-route decisions onto the segment nodes those routes are expected to visit,
-producing a planned pressure field \(\Psi_t^{\mathrm{CAV}}\) defined on the
+The macroscopic action of Section~\ref{sec:wm-formulation} must condition a
+graph-level transition, but decisions are made at the vehicle level.  We
+therefore project the realized one-hot CAV route decisions onto the segment
+nodes those routes are expected to visit, producing the planned pressure
+field \(\Psi_t^{\mathrm{CAV}}\) defined on the
 same segment set as \(X_t\) and \(Z_t\).  For active CAV \(i\), let
 \(\mathrm{Seg}_{\Delta}(P^k_{i,t})\subseteq N\) denote the segments it would
 enter within the look-ahead window \(\Delta\) under candidate \(P^k_{i,t}\);
@@ -92,7 +94,8 @@ where the controlled demand intends to go, not how large it is.
 
 \subsubsection{State-to-State Flow Matching}
 
-UrbanDreamer learns the latent transition with state-to-state flow
+The macroscopic transition \(F_\phi\) of Eq.~\ref{eq:macro-transition} is
+learned with state-to-state flow
 matching \cite{GiFlow} under the transition condition
 \begin{equation}
 \mathcal{C}_t=
@@ -140,21 +143,21 @@ Z_t+\int_0^1
 \end{equation}
 Multi-step imagination repeatedly applies this one-step transition, using
 each predicted \(\hat Z_{t+1}\) as the next source representation.
-% 中文注释：想象阶段从 \(x_0=Z_t\) 对速度场做 ODE 积分；多步想象反复应用一步 transition。
 
 
 \subsection{HDV Response Module}
 
-HDVs choose routes at departure time and adapt across episodes to the
-congestion that CAV routing induces.  UrbanDreamer models the two time
-scales separately.  Within an episode, the learned transition responds to
-the current CAV pressure \(\Psi_t^{\mathrm{CAV}}\) at every decision epoch.
-Across episodes, slower human adaptation is represented as an episode-level
-response field over road segments, predicted from the previous episode and
-held fixed within each imagined episode.  Imagined rollouts therefore
-optimize against step-level counterfactual traffic responses, while
-day-to-day HDV demand shifts are learned from real simulator episodes
-rather than simulated inside imagination.
+The macroscopic transition of Eq.~\ref{eq:macro-transition} is conditioned
+on the HDV traffic state, which evolves on two time scales: HDVs choose
+routes at departure time and adapt across episodes to CAV-induced
+congestion.  UrbanDreamer models the two scales separately.  Within an
+episode, the learned transition responds to the current CAV pressure
+\(\Psi_t^{\mathrm{CAV}}\) at every decision epoch; across episodes, slower
+human adaptation is an episode-level response field over road segments,
+predicted from the previous episode and held fixed within each imagined
+episode.  Imagined rollouts therefore optimize against step-level
+counterfactual traffic responses, while day-to-day HDV demand shifts are
+learned from real simulator episodes.
 
 The HDV influence is represented as a road-segment distribution
 \(H^{\mathrm{HDV}}\): the supervision target \(H^\star\) aggregates the

@@ -1,14 +1,12 @@
 \subsection{Actor-Critic Learner}
 
-Each imagined step produces a per-vehicle travel-time reward and a
-network-level global reward; two centralized critics estimate the
-corresponding returns, and the actor is updated from their combined
-advantage.  This dense credit is necessary because the global mean travel
-time in Definition~7 is an episode-level objective available only after a
-completed episode.  The per-vehicle signal is the primary actor-learning
-signal, while the global critic supplies an auxiliary aggregate value
-signal.
-% 中文注释：每个 imagined step 产生 per-vehicle 与 global reward；两个 centralized critics 估计 returns，actor 用组合 advantage 更新。per-vehicle 为主信号，global critic 为辅助。
+This subsection realizes the microscopic level of
+Section~\ref{sec:wm-formulation} and its two reward channels: each imagined
+step produces a per-vehicle travel-time reward and a network-level global
+reward, two centralized critics estimate the corresponding returns, and the
+actor is updated from their combined advantage.  The per-vehicle signal is
+the primary actor-learning signal, while the global critic supplies an
+auxiliary aggregate signal.
 
 \subsubsection{Vehicle-Level Imagination}
 
@@ -17,20 +15,15 @@ a decision epoch \(t_{\mathrm{start}}\), encode
 \(Z_{t_{\mathrm{start}}}=f_\phi(X_{t_{\mathrm{start}}},G)\), and initialize
 each vehicle's current segment, destination, route suffix, and arrival
 status from the same epoch.  At each imagined epoch, the actor selects a
-route and the decoder recovers the segment speed \(\widehat v_{t,u}\),
-giving the predicted segment travel time of Eq.~\ref{eq:micro-advance}.
-A deterministic vehicle wrapper (\(\mathrm{Advance}\) in
-Eq.~\ref{eq:micro-advance}) advances each vehicle along its route by
-consuming these travel times in route order, while the learned transition
-predicts \(Z_{t+1}\); because the wrapper and the transition consume the
-same decoded readout, vehicle positions and the segment traffic field evolve
-from a single prediction rather than two independent state estimates.
-Departing vehicles are added, arrived vehicles are removed, and the
-remaining CAVs form \(\mathcal{I}_{t+1}^{\mathrm{im}}\), which alone
-contribute actor samples, rewards, and bootstrap values.  The wrapper keeps
-vehicle identity explicit without requiring the graph-level world model to
-predict per-vehicle terminal variables.
-% 中文注释：从 replay state 初始化想象 rollout；decoder 给出 segment speed 与 travel time \(\widehat\tau_t(u)=\ell(u)/\widehat v_{t,u}\)；vehicle wrapper 按 route 顺序消耗 travel time 推进车辆，与 transition 共享同一 decoded readout；车辆加入/移除后剩余 CAV 构成 \(\mathcal{I}_{t+1}^{\mathrm{im}}\)。
+route and the decoder recovers the segment speed \(\widehat v_{t,u}\).  The
+deterministic vehicle wrapper of Eq.~\ref{eq:micro-advance} advances each
+vehicle along its route by consuming the decoded travel times in route
+order, while the learned transition predicts \(Z_{t+1}\); because both
+consume the same decoded readout, vehicle positions and the segment traffic
+field evolve from a single prediction rather than two independent state
+estimates.  Departing vehicles are added, arrived vehicles are removed, and
+the remaining CAVs form \(\mathcal{I}_{t+1}^{\mathrm{im}}\), which alone
+contribute actor samples, rewards, and bootstrap values.
 
 \subsubsection{Imagined Rewards}
 
