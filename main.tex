@@ -19,21 +19,6 @@
 %% values in them; it is your responsibility as an author to replace
 %% the commands and values with those provided to you when you
 %% complete the rights form.
-\setcopyright{acmlicensed}
-\copyrightyear{2018}
-\acmYear{2018}
-\acmDOI{XXXXXXX.XXXXXXX}
-%% These commands are for a PROCEEDINGS abstract or paper.
-\acmConference[Conference acronym 'XX]{Make sure to enter the correct
-  conference title from your rights confirmation email}{June 03--05,
-  2018}{Woodstock, NY}
-%%
-%%  Uncomment \acmBooktitle if the title of the proceedings is different
-%%  from ``Proceedings of ...''!
-%%
-%%\acmBooktitle{Woodstock '18: ACM Symposium on Neural Gaze Detection,
-%%  June 03--05, 2018, Woodstock, NY}
-\acmISBN{978-1-4503-XXXX-X/2018/06}
 
 
 %%
@@ -166,10 +151,13 @@
 
 We presented UrbanDreamer, a world-model-based MARL framework for mixed-autonomy dynamic routing. UrbanDreamer connects vehicle-level route choices with graph-level traffic dynamics through planned CAV pressure, models aggregate HDV responses, and optimizes CAV policies through imagined rollouts with complementary vehicle-level and global critics. Experiments in three SUMO urban networks show that UrbanDreamer learns effective routing policies with substantially fewer real environment steps and less training time than MARL baselines, and attains the lowest global mean travel time on two of the three networks. The ablation results further demonstrate the contributions of world-model imagination and the main model components, while the transition analysis shows that flow matching improves multi-step traffic prediction over deterministic regression. Future work will investigate uncertainty-aware imagination, adaptation across traffic demands and road networks, and deployment under real-world traffic observations.
 
-\paragraph{Limitations.}
+\section{Limitations}
 Our evaluation is conducted in microscopic simulation, and policies are
 trained and evaluated separately on each network, so transfer across networks
 and demand shifts remains open.
+
+\section{Limitations}
+
 
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
